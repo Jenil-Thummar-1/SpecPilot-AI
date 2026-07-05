@@ -1,43 +1,79 @@
 {% extends 'base.html' %}
 
 {% block title %}Create Project - SpecPilot AI{% endblock %}
-{% block page_title %}New Workspace{% endblock %}
+{% block page_title %}New Project Workspace{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="glass-panel border-0">
-            <h4 class="text-white mb-3 fw-bold">Initialize Project Planning Workspace</h4>
-            <p class="text-secondary small mb-5">Describe your software idea and let SpecPilot's AI agents build a production-quality blueprint.</p>
+            <h4 class="text-white mb-3 fw-bold">Initialize Project Workspace</h4>
+            <p class="text-secondary small mb-5">Select a template framework, detail your target users, stack preference, and initialize the agent planning FSM.</p>
             
             <form method="POST">
                 {% csrf_token %}
-                <div class="mb-4">
-                    <label class="form-label text-secondary small fw-semibold">Project Title</label>
-                    <input type="text" name="title" class="form-control form-control-custom" placeholder="e.g. FitTrack Mobile App" required>
-                    <div class="form-text text-muted">A clear, short name for your software project.</div>
+                <div class="row g-4">
+                    <!-- Title -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Project Title</label>
+                        <input type="text" name="title" class="form-control form-control-custom" placeholder="e.g. FitTrack Tracker App" required>
+                    </div>
+                    
+                    <!-- Predefined Templates Category -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Project Template / Category</label>
+                        <select name="category" class="form-select form-control-custom">
+                            {% for code, label in template_choices %}
+                                <option value="{{ code }}" {% if code == 'CUSTOM' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Short Description -->
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">Short Description</label>
+                        <input type="text" name="short_description" class="form-control form-control-custom" placeholder="A single-line elevator pitch outlining the application's core goal." required>
+                    </div>
+
+                    <!-- Detailed Description -->
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">Detailed Project Idea & Scope</label>
+                        <textarea name="description" rows="5" class="form-control form-control-custom" placeholder="Describe the software idea, target features, user stories, database requirements, and expected integrations..." required></textarea>
+                    </div>
+
+                    <!-- Target Personas -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Target User Personas</label>
+                        <textarea name="target_users" rows="3" class="form-control form-control-custom" placeholder="E.g. fitness enthusiasts, gym trainers, data analysts..."></textarea>
+                    </div>
+
+                    <!-- Tech Stack -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Preferred Tech Stack</label>
+                        <textarea name="tech_stack" rows="3" class="form-control form-control-custom" placeholder="E.g. Python Django, PostgreSQL, React Native, TailwindCSS..."></textarea>
+                    </div>
+
+                    <!-- Target Architecture -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Target Architecture Style</label>
+                        <select name="target_architecture" class="form-select form-control-custom">
+                            {% for code, label in arch_choices %}
+                                <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Deployment Preference -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Deployment Preference</label>
+                        <input type="text" name="deployment_preference" class="form-control form-control-custom" value="Docker / VPS" placeholder="E.g. AWS serverless, Heroku, Docker container on VPS...">
+                    </div>
                 </div>
-                
-                <div class="mb-4">
-                    <label class="form-label text-secondary small fw-semibold">Project Idea & Scope</label>
-                    <textarea name="description" rows="6" class="form-control form-control-custom" placeholder="Describe the software idea, target features, user stories, database requirements, and expected integrations..." required></textarea>
-                    <div class="form-text text-muted">The more detail you provide about features and workflows, the better the output spec documents.</div>
-                </div>
-                
-                <div class="mb-5">
-                    <label class="form-label text-secondary small fw-semibold">Target Architecture Style</label>
-                    <select name="architecture" class="form-select form-control-custom">
-                        <option value="MONOLITH">Monolithic Architecture (Single codebase, clean modules)</option>
-                        <option value="MICROSERVICES">Microservices Architecture (Distributed service modules)</option>
-                        <option value="SERVERLESS">Serverless Architecture (Cloud functions, managed database)</option>
-                        <option value="EVENT_DRIVEN">Event-Driven Architecture (Message brokers, asynchronous consumers)</option>
-                    </select>
-                </div>
-                
-                <div class="d-flex align-items-center justify-content-end gap-3 border-top pt-4" style="border-color: rgba(255,255,255,0.05);">
+
+                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
                     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary border-0">Cancel</a>
                     <button type="submit" class="btn btn-primary-custom px-4 py-2.5">
-                        <i class="bi bi-airplane-engines-fill me-1"></i> Initialize Project
+                        <i class="bi bi-airplane-engines-fill me-1"></i> Initialize Workflow
                     </button>
                 </div>
             </form>

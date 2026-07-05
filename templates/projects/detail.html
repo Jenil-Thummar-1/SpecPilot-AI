@@ -5,65 +5,177 @@
 
 {% block content %}
 <div class="row g-4">
-    <!-- Left Column: Project Overview and Lifecycle Steps -->
-    <div class="col-lg-5">
+    <!-- Left Column: Project Overview, Health Stats, and Version Control -->
+    <div class="col-lg-4">
+        <!-- Project Metadata Overview Card -->
         <div class="glass-card p-4 mb-4 border-0">
             <div class="d-flex align-items-center justify-content-between mb-3">
-                <h4 class="text-white fw-bold mb-0">{{ project.title }}</h4>
-                <span class="badge bg-primary-glow text-primary">{{ project.get_target_architecture_display }}</span>
+                <span class="badge bg-primary-glow text-primary text-uppercase">{{ project.get_category_display }}</span>
+                <span class="text-secondary small fw-semibold">Version {{ project.current_version }}</span>
             </div>
-            <p class="text-secondary small mb-4">{{ project.description }}</p>
+            <h4 class="text-white fw-bold mb-1">{{ project.title }}</h4>
+            <p class="text-accent small fw-semibold mb-3">{{ project.short_description }}</p>
+            <p class="text-secondary small mb-4" style="text-align: justify;">{{ project.description }}</p>
             
-            <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.85rem;">
-                <span class="text-secondary fw-semibold">Workspace Planning Progress</span>
-                <span class="fw-bold text-white">{{ plan.overall_progress_pct|floatformat:0 }}%</span>
+            <div class="border-top pt-3" style="border-color: rgba(255,255,255,0.05); font-size: 0.85rem;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Target Users:</span>
+                    <span class="text-white text-end" style="max-width: 180px;">{{ project.target_users|default:"General Audience" }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Tech Stack:</span>
+                    <span class="text-white text-end" style="max-width: 180px;">{{ project.tech_stack|default:"Not Configured" }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Architecture:</span>
+                    <span class="text-white">{{ project.get_target_architecture_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Deployment:</span>
+                    <span class="text-white">{{ project.deployment_preference }}</span>
+                </div>
             </div>
-            <div class="progress mb-2" style="height: 8px; background: var(--card-border);">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ plan.overall_progress_pct }}%"></div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-secondary border-0 glass-card">
+                    <i class="bi bi-pencil-square me-1"></i> Edit Settings
+                </a>
             </div>
         </div>
 
-        <!-- Planning Timeline Steps -->
-        <div class="glass-card p-4 border-0">
-            <h5 class="text-white fw-bold mb-4">Planning Lifecycle Steps (14 Phases)</h5>
+        <!-- Health Indicators Card -->
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-3">Project Workspace Health</h5>
+            
+            <div class="d-flex flex-column gap-3">
+                <!-- Overall Progress -->
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.8rem;">
+                        <span class="text-secondary fw-semibold">Overall Progress</span>
+                        <span class="fw-bold text-white">{{ health.overall_progress|floatformat:0 }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px; background: var(--card-border);">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ health.overall_progress }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Metrics grid -->
+                <div class="row g-2 text-center" style="font-size: 0.8rem;">
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border);">
+                            <span class="text-muted block mb-1">Completion</span>
+                            <span class="fw-bold text-white block">{{ health.workflow_completion }} Steps</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border);">
+                            <span class="text-muted block mb-1">Time Remaining</span>
+                            <span class="fw-bold text-white block">{{ health.estimated_remaining_minutes }} min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top pt-2 d-flex align-items-center justify-content-between" style="border-color: rgba(255,255,255,0.05); font-size: 0.8rem;">
+                    <span class="text-muted">Active Stage:</span>
+                    <span class="badge bg-accent-glow text-accent">{{ health.active_stage }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Version Snapshots rollback control -->
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-3">Snapshot History</h5>
+            <p class="text-secondary small mb-3">Restore workspace parameters back to a previous backup snapshot.</p>
+            
+            {% if versions %}
+                <div class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
+                    {% for ver in versions %}
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border); font-size: 0.8rem;">
+                            <div>
+                                <span class="fw-bold text-white block">v{{ ver.version_number }}</span>
+                                <span class="text-muted" style="font-size: 0.7rem;">{{ ver.created_at|date:"M d, H:i" }}</span>
+                            </div>
+                            
+                            {% if ver.version_number == project.current_version %}
+                                <span class="badge bg-success-glow text-success">Active</span>
+                            {% else %}
+                                <form method="POST" action="{% url 'project_restore' project.id ver.version_number %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+                                        Rollback
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small mb-0">No snapshots recorded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Timeline tracker, exports compilations, and artifacts logs -->
+    <div class="col-lg-8">
+        <!-- Planning Timeline Section -->
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-4">Planning Lifecycle Workflow</h5>
             
             <div class="planning-timeline">
                 {% for step in steps %}
                     <div class="timeline-item {% if step.status == 'COMPLETED' %}completed{% elif step.status == 'RUNNING' %}running{% elif step.status == 'FAILED' %}failed{% endif %}">
                         <div class="timeline-dot"></div>
-                        <div class="glass-card p-3 border-0 ms-2" style="background: rgba(255,255,255,0.01);">
+                        <div class="glass-card p-3 border-0 ms-2" style="background: rgba(255,255,255,0.015);">
+                            <!-- Header status -->
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <h6 class="mb-0 fw-bold text-white small">Phase {{ step.order }}: {{ step.title }}</h6>
+                                <h6 class="mb-0 fw-bold text-white small">
+                                    Phase {{ step.order }}: {{ step.title }}
+                                </h6>
                                 <span class="badge {% if step.status == 'COMPLETED' %}bg-success{% elif step.status == 'RUNNING' %}bg-warning{% elif step.status == 'FAILED' %}bg-danger{% else %}bg-secondary{% endif %}-glow" style="font-size: 0.65rem;">
                                     {{ step.get_status_display }}
                                 </span>
                             </div>
-                            <p class="text-secondary mb-3" style="font-size: 0.8rem;">{{ step.description }}</p>
                             
+                            <!-- Duration & Dependencies -->
+                            <div class="d-flex align-items-center gap-3 mb-2 text-muted" style="font-size: 0.75rem;">
+                                <span><i class="bi bi-clock me-1"></i>Est: {{ step.estimated_duration_minutes }} min</span>
+                                {% if step.dependencies_str %}
+                                    <span><i class="bi bi-link-45deg me-1"></i>Depends on: Phase(s) {{ step.dependencies_str }}</span>
+                                {% endif %}
+                            </div>
+
+                            <p class="text-secondary mb-3" style="font-size: 0.8rem; text-align: justify;">{{ step.description }}</p>
+
+                            <!-- Notes if failed or has completions metadata -->
+                            {% if step.notes %}
+                                <div class="p-2.5 rounded text-secondary mb-3" style="background: rgba(0,0,0,0.15); border-left: 3px solid var(--primary); font-size: 0.8rem; font-family: monospace;">
+                                    <strong>Notes:</strong> {{ step.notes }}
+                                </div>
+                            {% endif %}
+
+                            <!-- Actions & Dates -->
                             <div class="d-flex align-items-center justify-content-between">
-                                <!-- Dates -->
                                 <span class="small text-muted" style="font-size: 0.7rem;">
                                     {% if step.completed_at %}
-                                        Done: {{ step.completed_at|date:"M d, H:i" }}
+                                        Actual Complete: {{ step.completed_at|date:"M d, H:i" }}
                                     {% elif step.started_at %}
                                         Started: {{ step.started_at|date:"M d, H:i" }}
                                     {% else %}
-                                        Pending activation
+                                        Pending active transition
                                     {% endif %}
                                 </span>
-                                
-                                <!-- Run triggers -->
+
                                 {% if step.status != 'COMPLETED' and step.status != 'RUNNING' %}
                                     <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom px-3 py-1" style="font-size: 0.75rem;">
-                                        <i class="bi bi-play-fill"></i> Run Agent Task
+                                        <i class="bi bi-play-fill"></i> Run Planning Step
                                     </a>
                                 {% elif step.status == 'RUNNING' %}
                                     <button class="btn btn-sm btn-outline-warning border-0 disabled" style="font-size: 0.75rem;">
-                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span> Thinking...
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span> Agent Thinking...
                                     </button>
                                 {% else %}
                                     <span class="text-success small fw-semibold" style="font-size: 0.75rem;">
-                                        <i class="bi bi-patch-check-fill me-1"></i> Completed
+                                        <i class="bi bi-patch-check-fill me-1"></i> Success
                                     </span>
                                 {% endif %}
                             </div>
@@ -72,14 +184,11 @@
                 {% endfor %}
             </div>
         </div>
-    </div>
 
-    <!-- Right Column: Compiled Documents and Compilation Export Panel -->
-    <div class="col-lg-7">
-        <!-- Export compilation panel -->
+        <!-- Compiled Exporter panel -->
         <div class="glass-card p-4 mb-4 border-0">
             <h5 class="text-white fw-bold mb-3">Compile & Export Project Blueprint</h5>
-            <p class="text-secondary small mb-4">Pack all successfully planned software design phases into a final downloadable package.</p>
+            <p class="text-secondary small mb-4">Aggregates and formats all compiled planning specifications into unified distribution copies.</p>
             
             <form method="POST" action="{% url 'export_project' project.id %}" class="row g-3 align-items-center">
                 {% csrf_token %}
@@ -92,32 +201,32 @@
                 </div>
                 <div class="col-md-5">
                     <button type="submit" class="btn btn-primary-custom w-100 py-2" {% if not artifacts %}disabled{% endif %}>
-                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Generate Download
+                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Compile Output
                     </button>
                 </div>
             </form>
             
             {% if not artifacts %}
-                <div class="form-text text-danger mt-2 small"><i class="bi bi-info-circle-fill"></i> You must complete at least one planning stage to generate exports.</div>
+                <div class="form-text text-danger mt-2 small"><i class="bi bi-info-circle-fill"></i> Execute at least one planning task to unlock compilers.</div>
             {% endif %}
-            
-            <!-- Export log -->
+
+            <!-- Archive generated exports list -->
             {% if export_jobs %}
                 <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.05);">
-                    <h6 class="text-white fw-semibold small mb-2">Generated Downloads Archive</h6>
+                    <h6 class="text-white fw-semibold small mb-2">Compiled Download Archives</h6>
                     <div class="d-flex flex-column gap-2">
                         {% for job in export_jobs %}
                             <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi {% if job.export_format == 'PDF' %}bi-filetype-pdf text-danger{% elif job.export_format == 'JSON' %}bi-filetype-json text-warning{% else %}bi-file-earmark-markdown-fill text-primary{% endif %}"></i>
-                                    <span class="small text-secondary">{{ job.export_format }} Blueprint - {{ job.created_at|date:"M d, H:i" }}</span>
+                                    <span class="small text-secondary" style="font-size: 0.75rem;">{{ job.export_format }} compiled blueprint - {{ job.created_at|date:"M d, H:i" }}</span>
                                 </div>
                                 {% if job.status == 'SUCCEEDED' %}
-                                    <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0">
+                                    <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0" style="font-size: 0.8rem;">
                                         <i class="bi bi-download"></i> Download
                                     </a>
                                 {% else %}
-                                    <span class="small text-danger">Failed</span>
+                                    <span class="small text-danger">Compilation Failed</span>
                                 {% endif %}
                             </div>
                         {% endfor %}
@@ -126,8 +235,8 @@
             {% endif %}
         </div>
 
-        <!-- Generated Documents Tabs -->
-        <div class="glass-card p-4 border-0">
+        <!-- Generated spec artifacts tab view panel -->
+        <div class="glass-card p-4 mb-4 border-0">
             <h5 class="text-white fw-bold mb-4">Generated Spec Blueprints</h5>
             
             {% if artifacts %}
@@ -157,7 +266,7 @@
                                 <span class="small text-muted">Version {{ art.version }}</span>
                             </div>
                             
-                            <!-- Display heuristic score evaluations -->
+                            <!-- Display quality evaluations if present -->
                             {% if art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
                                 {% with eval=art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
                                     <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded" style="background: rgba(255,255,255,0.015); border-left: 4px solid {% if eval.status == 'PASSED' %}#10b981{% elif eval.status == 'FAILED' %}#ef4444{% else %}#eab308{% endif %};">
@@ -174,16 +283,52 @@
                                 {% endwith %}
                             {% endif %}
                             
-                            <!-- Artifact raw text scroll box -->
-                            <div class="p-3 rounded text-secondary overflow-y-auto" style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.85rem; max-height: 500px; white-space: pre-wrap;">{{ art.content }}</div>
+                            <div class="p-3 rounded text-secondary overflow-y-auto" style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.85rem; max-height: 400px; white-space: pre-wrap;">{{ art.content }}</div>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-file-earmark-code text-muted fs-1 mb-3 block"></i>
-                    <p class="text-secondary">No documents generated yet. Run agent tasks in the timeline to initialize files.</p>
+                    <p class="text-secondary">No design documents generated yet. Run planning steps above to compile files.</p>
                 </div>
+            {% endif %}
+        </div>
+
+        <!-- Activity History logs timeline -->
+        <div class="glass-card p-4 border-0">
+            <h5 class="text-white fw-bold mb-4">Workspace Activity History</h5>
+            
+            {% if activities %}
+                <div class="d-flex flex-column gap-3">
+                    {% for act in activities %}
+                        <div class="d-flex align-items-start gap-3 p-2 rounded" style="background: rgba(255,255,255,0.01); border-left: 3px solid {% if act.action_type == 'CREATED' %}#3b82f6{% elif act.action_type == 'RESTORED' %}#eab308{% elif act.action_type == 'STAGE_UPDATED' %}#a855f7{% else %}var(--primary){% endif %};">
+                            <div class="rounded-circle bg-primary-glow p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                {% if act.action_type == 'CREATED' %}
+                                    <i class="bi bi-plus-circle text-primary"></i>
+                                {% elif act.action_type == 'EDITED' %}
+                                    <i class="bi bi-pencil text-info"></i>
+                                {% elif act.action_type == 'STAGE_UPDATED' %}
+                                    <i class="bi bi-cpu text-accent"></i>
+                                {% elif act.action_type == 'RESTORED' %}
+                                    <i class="bi bi-arrow-counterclockwise text-warning"></i>
+                                {% elif act.action_type == 'DUPLICATED' %}
+                                    <i class="bi bi-copy text-primary"></i>
+                                {% else %}
+                                    <i class="bi bi-info-circle text-secondary"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="small fw-bold text-white">{{ act.description }}</div>
+                                <div class="small text-muted" style="font-size: 0.75rem;">
+                                    Performed by: {{ act.user.username|default:"AI Orchestrator" }} | {{ act.created_at|date:"M d, Y - H:i:s" }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small mb-0">No activities logged yet.</p>
             {% endif %}
         </div>
     </div>

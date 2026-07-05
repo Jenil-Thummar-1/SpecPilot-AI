@@ -8,12 +8,14 @@ PROJECT_STATUS_DRAFT = 'DRAFT'
 PROJECT_STATUS_PLANNING = 'PLANNING'
 PROJECT_STATUS_COMPLETE = 'COMPLETE'
 PROJECT_STATUS_FAILED = 'FAILED'
+PROJECT_STATUS_ARCHIVED = 'ARCHIVED'
 
 PROJECT_STATUS_CHOICES = [
     (PROJECT_STATUS_DRAFT, 'Draft'),
     (PROJECT_STATUS_PLANNING, 'Planning In Progress'),
     (PROJECT_STATUS_COMPLETE, 'Complete'),
     (PROJECT_STATUS_FAILED, 'Failed'),
+    (PROJECT_STATUS_ARCHIVED, 'Archived'),
 ]
 
 # Architecture Patterns
@@ -27,6 +29,31 @@ ARCH_CHOICES = [
     (ARCH_MICROSERVICES, 'Microservices Architecture'),
     (ARCH_SERVERLESS, 'Serverless Architecture'),
     (ARCH_EVENT_DRIVEN, 'Event-Driven Architecture'),
+]
+
+# Project Categories / Predefined Templates
+TEMPLATE_CRM = 'CRM'
+TEMPLATE_HRMS = 'HRMS'
+TEMPLATE_ERP = 'ERP'
+TEMPLATE_ECOMMERCE = 'ECOMMERCE'
+TEMPLATE_AI_AGENT = 'AI_AGENT'
+TEMPLATE_SAAS = 'SAAS'
+TEMPLATE_PORTFOLIO = 'PORTFOLIO'
+TEMPLATE_BLOG = 'BLOG'
+TEMPLATE_HOSPITAL = 'HOSPITAL'
+TEMPLATE_CUSTOM = 'CUSTOM'
+
+TEMPLATE_CHOICES = [
+    (TEMPLATE_CRM, 'Customer Relationship Management (CRM)'),
+    (TEMPLATE_HRMS, 'HR Management System (HRMS)'),
+    (TEMPLATE_ERP, 'Enterprise Resource Planning (ERP)'),
+    (TEMPLATE_ECOMMERCE, 'E-Commerce Platform'),
+    (TEMPLATE_AI_AGENT, 'Autonomous AI Agent System'),
+    (TEMPLATE_SAAS, 'Software-as-a-Service (SaaS)'),
+    (TEMPLATE_PORTFOLIO, 'Professional Portfolio'),
+    (TEMPLATE_BLOG, 'Blog/CMS Platform'),
+    (TEMPLATE_HOSPITAL, 'Hospital Management System'),
+    (TEMPLATE_CUSTOM, 'Custom Project (Start from Scratch)'),
 ]
 
 # Agent Roles
@@ -105,6 +132,7 @@ STEP_ROADMAP = 'DEVELOPMENT_ROADMAP'
 STEP_SECURITY = 'SECURITY_CHECKLIST'
 STEP_TESTING = 'TESTING_CHECKLIST'
 STEP_DEPLOYMENT = 'DEPLOYMENT_PLAN'
+STEP_EXPORT_PREP = 'EXPORT_PREP'
 
 PLAN_STEP_CHOICES = [
     (STEP_IDEA, 'Project Idea'),
@@ -121,6 +149,7 @@ PLAN_STEP_CHOICES = [
     (STEP_SECURITY, 'Security Checklist'),
     (STEP_TESTING, 'Testing Checklist'),
     (STEP_DEPLOYMENT, 'Deployment Plan'),
+    (STEP_EXPORT_PREP, 'Export Preparation'),
 ]
 
 # Plan Step Statuses
