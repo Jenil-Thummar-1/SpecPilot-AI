@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Prompt Library - SpecPilot AI{% endblock %}
+{% block page_title %}Prompt Library{% endblock %}
+
+{% block content %}
+<div class="glass-card p-4 border-0 mb-4">
+    <h5 class="text-white fw-bold mb-2">Prompt Library & Templates Registry</h5>
+    <p class="text-secondary small mb-0">SpecPilot AI uses highly optimized, structured system prompt directives designed specifically for the Gemini architecture to govern the 15 planning stages.</p>
+</div>
+
+<div class="row g-4">
+    <!-- Left column sidebar list of prompts -->
+    <div class="col-lg-4">
+        <div class="glass-card p-3 border-0">
+            <h6 class="text-white fw-bold mb-3">Workflow Prompts Catalog</h6>
+            <div class="nav flex-column gap-2" id="prompt-list" role="tablist">
+                {% for name, prompt_text in prompts.items %}
+                    <button class="nav-link-custom text-start border-0 w-100 {% if forloop.first %}active{% endif %}"
+                            id="p-tab-{{ forloop.counter }}"
+                            data-bs-toggle="pill"
+                            data-bs-target="#p-pane-{{ forloop.counter }}"
+                            type="button"
+                            role="tab"
+                            aria-controls="p-pane-{{ forloop.counter }}"
+                            aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                        <i class="bi bi-chat-left-quote me-2"></i> {{ name }}
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column preview detail -->
+    <div class="col-lg-8">
+        <div class="glass-card p-4 border-0 tab-content" id="prompt-content">
+            {% for name, prompt_text in prompts.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                     id="p-pane-{{ forloop.counter }}"
+                     role="tabpanel"
+                     aria-labelledby="p-tab-{{ forloop.counter }}">
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05);">
+                        <h5 class="text-white fw-bold mb-0">{{ name }} Prompt</h5>
+                        <button class="btn btn-sm btn-outline-primary border-0 p-1" onclick="navigator.clipboard.writeText(document.getElementById('raw-prompt-{{ forloop.counter }}').innerText); alert('Copied prompt to clipboard!');" title="Copy to clipboard">
+                            <i class="bi bi-clipboard fs-5"></i> Copy Prompt
+                        </button>
+                    </div>
+
+                    <div class="p-3 rounded text-secondary overflow-y-auto" 
+                         id="raw-prompt-{{ forloop.counter }}"
+                         style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.85rem; max-height: 500px; white-space: pre-wrap;">{{ prompt_text }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

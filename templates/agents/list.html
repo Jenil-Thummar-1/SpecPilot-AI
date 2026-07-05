@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Agents Portal - SpecPilot AI{% endblock %}
+{% block page_title %}AI Agents Portal{% endblock %}
+
+{% block content %}
+<!-- Statistics Header -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Total Agents</span>
+                <h3 class="mb-0 fw-bold text-white">{{ stats.total }}</h3>
+            </div>
+            <div class="rounded bg-primary-glow p-3">
+                <i class="bi bi-robot text-primary fs-4"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Active Agents</span>
+                <h3 class="mb-0 fw-bold text-white">{{ stats.active }}</h3>
+            </div>
+            <div class="rounded bg-primary-glow p-3" style="background: rgba(16, 185, 129, 0.1);">
+                <i class="bi bi-check-circle-fill text-success fs-4"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Agents Busy</span>
+                <h3 class="mb-0 fw-bold text-white">{{ stats.busy }}</h3>
+            </div>
+            <div class="rounded bg-accent-glow p-3" style="background: rgba(168, 85, 247, 0.15);">
+                <i class="bi bi-cpu text-accent fs-4"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Agents Idle</span>
+                <h3 class="mb-0 fw-bold text-white">{{ stats.idle }}</h3>
+            </div>
+            <div class="rounded bg-accent-glow p-3" style="background: rgba(59, 130, 246, 0.1);">
+                <i class="bi bi-pause-circle-fill text-info fs-4"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agents Grid Actions -->
+<div class="glass-card p-4 border-0">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h5 class="mb-0 fw-bold text-white">System AI Agent Personnel</h5>
+        <a href="{% url 'agent_create' %}" class="btn btn-primary-custom">
+            <i class="bi bi-plus-circle me-1"></i> Register New Agent
+        </a>
+    </div>
+
+    {% if agents %}
+        <div class="row g-4">
+            {% for agent in agents %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.015); {% if not agent.is_active %}opacity: 0.6;{% endif %}">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-primary-glow text-primary text-uppercase">{{ agent.get_role_display }}</span>
+                                <span class="badge bg-outline-secondary" style="font-size: 0.7rem; border: 1px solid var(--card-border);">v{{ agent.version }}</span>
+                            </div>
+                            <h5 class="text-white fw-bold mb-2">{{ agent.name }}</h5>
+                            <p class="text-secondary small mb-3">{{ agent.description }}</p>
+                            
+                            <!-- Prompt Preview snippet -->
+                            <div class="p-2.5 rounded text-muted mb-3" style="background: rgba(0,0,0,0.15); font-family: monospace; font-size: 0.75rem; max-height: 80px; overflow-y: hidden;">
+                                <strong>System:</strong> {{ agent.system_prompt|truncatechars:120 }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- Hyperparameter Stats -->
+                            <div class="row g-2 text-center text-secondary small mb-4" style="font-size: 0.75rem;">
+                                <div class="col-6">
+                                    <div class="p-1 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
+                                        Temp: <strong>{{ agent.temperature }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-1 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
+                                        Max Out: <strong>{{ agent.max_tokens }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status Dot and toggles -->
+                            <div class="d-flex align-items-center justify-content-between border-top pt-3" style="border-color: rgba(255,255,255,0.05); font-size: 0.8rem;">
+                                <span class="fw-semibold text-secondary d-flex align-items-center gap-1">
+                                    <span class="status-dot {% if not agent.is_active %}offline{% elif agent.status == 'IDLE' %}idle{% else %}executing{% endif %}"></span>
+                                    {% if not agent.is_active %}Deactivated{% else %}{{ agent.get_status_display }}{% endif %}
+                                </span>
+                                
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'agent_edit' agent.id %}" class="btn btn-sm btn-outline-secondary border-0 px-2 py-1" title="Configure Agent">
+                                        <i class="bi bi-gear-fill"></i>
+                                    </a>
+                                    
+                                    <form method="POST" action="{% url 'agent_toggle' agent.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm {% if agent.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %} border-0 px-2 py-1" title="{% if agent.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            <i class="bi {% if agent.is_active %}bi-toggle-on text-success{% else %}bi-toggle-off text-muted{% endif %} fs-5"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-robot text-muted fs-1 mb-3 block"></i>
+            <p class="text-secondary">No AI Agents configured. Seed the default agent records.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

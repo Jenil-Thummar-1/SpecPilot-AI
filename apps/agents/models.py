@@ -15,6 +15,19 @@ class Agent(TimeStampedModel):
     version = models.CharField(max_length=20, default='1.0.0')
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=20, choices=AGENT_STATUS_CHOICES, default=AGENT_STATUS_IDLE)
+    
+    # Advanced Enterprise properties
+    max_tokens = models.IntegerField(default=4096, help_text="Maximum output bounds permitted for generation.")
+    supported_project_types = models.TextField(
+        blank=True, 
+        default="CRM,HRMS,ERP,ECOMMERCE,AI_AGENT,SAAS,PORTFOLIO,BLOG,HOSPITAL,CUSTOM",
+        help_text="Comma-separated templates this agent is allowed to plan."
+    )
+    config_settings = models.JSONField(
+        default=dict, 
+        blank=True, 
+        help_text="Advanced configuration settings like safety threshold levels, model versions, etc."
+    )
 
     def __str__(self):
         return f"{self.name} ({self.get_role_display()})"

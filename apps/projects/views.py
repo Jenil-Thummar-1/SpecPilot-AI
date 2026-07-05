@@ -284,8 +284,7 @@ class ProjectVersionRestoreView(LoginRequiredMixin, View):
 @login_required
 def run_plan_step_view(request, project_id, step_id):
     """
-    Orchestrates the AI Agent execution logic for a single planning lifecycle step.
-    Loads memory context, formats prompt templates, queries Gemini, validates formatting, and saves artifacts.
+    Orchestrates the AI Agent execution logic by invoking the AgentOrchestratorService pipeline.
     """
     project = get_object_or_404(Project, id=project_id, user=request.user)
     step = get_object_or_404(PlanStep, id=step_id, project_plan__project=project)
@@ -294,133 +293,24 @@ def run_plan_step_view(request, project_id, step_id):
         messages.warning(request, "This planning stage is already being processed by the AI Agent.")
         return redirect('project_detail', project_id=project.id)
         
-    PlannerService.start_step(step)
-    
-    # Map step types to prompts templates & agent roles
-    prompt_templates = {
-        STEP_REQUIREMENTS: (prompts_library.REQUIREMENTS_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_PRD: (prompts_library.PRD_PROMPT, AGENT_ROLE_WRITER),
-        STEP_USER_STORIES: (prompts_library.USER_STORIES_PROMPT, AGENT_ROLE_PLANNER),
-        STEP_FUNCTIONAL: (prompts_library.FUNCTIONAL_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_NON_FUNCTIONAL: (prompts_library.NON_FUNCTIONAL_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_ARCHITECTURE: (prompts_library.ARCHITECTURE_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_DATABASE: (prompts_library.DATABASE_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_API: (prompts_library.API_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_FOLDER_STRUCTURE: (prompts_library.FOLDER_STRUCTURE_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_ROADMAP: (prompts_library.ROADMAP_PROMPT, AGENT_ROLE_PLANNER),
-        STEP_SECURITY: (prompts_library.SECURITY_PROMPT, AGENT_ROLE_ARCHITECT),
-        STEP_TESTING: (prompts_library.TESTING_PROMPT, AGENT_ROLE_QA),
-        STEP_DEPLOYMENT: (prompts_library.DEPLOYMENT_PROMPT, AGENT_ROLE_QA),
-    }
-    
-    if step.step_type not in prompt_templates:
-        # Fallback completion for step 15 or others that don't have generation templates
-        if step.step_type == STEP_EXPORT_PREP:
-            # Step 15 mock output
-            GeneratedArtifact.objects.create(
-                project=project,
-                step=step,
-                artifact_type='TEXT',
-                title=step.title,
-                content="Export Compilation Ready. Run the compiled blueprint compilation triggers above."
-            )
-            PlannerService.complete_step(step, notes="Export files index generated.")
-            messages.success(request, "Export Preparation phase successfully concluded.")
-            return redirect('project_detail', project_id=project.id)
-            
-        PlannerService.fail_step(step, "Unrecognized planning phase.")
-        messages.error(request, "Unrecognized planning phase. Operation aborted.")
-        return redirect('project_detail', project_id=project.id)
-        
-    template, agent_role = prompt_templates[step.step_type]
-    
-    # Resolve target Agent config
-    agent = Agent.objects.filter(role=agent_role, is_active=True).first()
-    if not agent:
-        agent = Agent.objects.create(
-            name=f"Standard {agent_role.title()}",
-            role=agent_role,
-            description="Dynamically spawned system agent.",
-            system_prompt="Execute specialized coding workspace tasks."
-        )
-
-    execution = AgentExecution.objects.create(
-        agent=agent,
-        project=project,
-        status='RUNNING'
-    )
-    
     try:
-        memory_context = MemoryService.load_context(project)
+        from apps.agents.services import AgentOrchestratorService
+        response = AgentOrchestratorService.execute_pipeline(step.id, request.user)
+        messages.success(request, f"Phase '{step.title}' successfully completed by AI Agent orchestrator!")
         
-        if step.step_type == STEP_REQUIREMENTS:
-            prompt = PromptBuilder.build_prompt(
-                template,
-                idea=project.description,
-                architecture=project.get_target_architecture_display()
-            )
-        else:
-            prompt = PromptBuilder.build_prompt(
-                template,
-                context_doc=memory_context
-            )
-            
-        ai_service = GeminiService(
-            api_key=request.user.profile.api_key_override or None,
-            model_name="gemini-1.5-flash"
-        )
-        
-        response = ai_service.generate_text(
-            prompt=prompt,
-            system_instruction=agent.system_prompt,
-            temperature=agent.temperature
-        )
-        
-        execution.input_tokens = response.get("input_tokens", 0)
-        execution.output_tokens = response.get("output_tokens", 0)
-        execution.execution_time_ms = response.get("elapsed_time_ms", 0)
-        
-        if not response.get("success", False):
-            raise Exception(response.get("error", "AI generation request failed."))
-            
-        generated_text = response["text"]
-        
-        artifact = GeneratedArtifact.objects.create(
+        # Log stage completion activity
+        ActivityLog.objects.create(
             project=project,
-            step=step,
-            artifact_type='MARKDOWN',
-            title=step.title,
-            content=generated_text
+            action_type="STAGE_UPDATED",
+            description=f"AI Agent completed the planning phase: {step.title}.",
+            user=request.user
         )
-        
-        # Trigger evaluation validation scoring
-        EvaluationService.evaluate_artifact(execution, generated_text, step.title)
-        
-        # Write output back into project context memory
-        MemoryService.save_memory(
-            project=project,
-            role="AGENT",
-            content=f"Generated Output for Phase {step.title}:\n{generated_text}",
-            memory_type=MEMORY_SHORT_TERM
-        )
-        
-        execution.status = 'SUCCEEDED'
-        execution.save()
-        
-        # Mark plan step stage complete
-        PlannerService.complete_step(step, notes=f"Generated by {agent.name} with quality score approval.")
-        messages.success(request, f"Phase '{step.title}' successfully completed by {agent.name}!")
-        
     except Exception as ex:
         logger.error(f"Error during execution run of step '{step.title}': {str(ex)}")
-        execution.status = 'FAILED'
-        execution.error_message = str(ex)
-        execution.save()
-        
-        PlannerService.fail_step(step, error_message=str(ex))
-        messages.error(request, f"Agent failed to plan phase: {str(ex)}")
+        messages.error(request, f"Agent execution failed: {str(ex)}")
         
     return redirect('project_detail', project_id=project.id)
+
 
 @login_required
 def export_project_view(request, project_id):

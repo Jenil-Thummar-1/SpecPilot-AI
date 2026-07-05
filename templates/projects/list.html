@@ -152,7 +152,7 @@
                             <span class="fw-bold text-white">{{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%</span>
                         </div>
                         <div class="progress mb-4" style="height: 6px; background: var(--card-border);">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ project.plan.overall_progress_pct|default:0 }}%"></div>
+                            <div class="progress-bar bg-primary" role="progressbar" style="--progress-width: {{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%; width: var(--progress-width);"></div>
                         </div>
 
                         <!-- Active health metrics -->

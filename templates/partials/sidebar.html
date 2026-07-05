@@ -14,9 +14,25 @@
                 <i class="bi bi-folder-fill"></i>
                 Projects
             </a>
-            <a href="{% url 'project_create' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'project_create' %}active{% endif %}">
-                <i class="bi bi-plus-circle-fill"></i>
-                New Project
+            <a href="{% url 'agent_list' %}" class="nav-link-custom {% if 'agent_list' in request.resolver_match.url_name or 'agent_edit' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-robot"></i>
+                Agents Portal
+            </a>
+            <a href="{% url 'skill_list' %}" class="nav-link-custom {% if 'skill_list' in request.resolver_match.url_name or 'skill_edit' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-lightbulb-fill"></i>
+                Skills Engine
+            </a>
+            <a href="{% url 'memory_list' %}" class="nav-link-custom {% if 'memory_list' in request.resolver_match.url_name or 'memory_detail' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="bi bi-database-fill"></i>
+                Memory Vault
+            </a>
+            <a href="{% url 'prompt_library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'prompt_library' %}active{% endif %}">
+                <i class="bi bi-chat-left-quote-fill"></i>
+                Prompt Library
+            </a>
+            <a href="{% url 'execution_history' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'execution_history' %}active{% endif %}">
+                <i class="bi bi-activity"></i>
+                Execution Logs
             </a>
         </nav>
         

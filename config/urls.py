@@ -14,6 +14,9 @@ urlpatterns = [
     path('accounts/', include('apps.accounts.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     path('projects/', include('apps.projects.urls')),
+    path('agents/', include('apps.agents.urls')),
+    path('skills/', include('apps.skills.urls')),
+    path('memory/', include('apps.memory.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Execution Logs - SpecPilot AI{% endblock %}
+{% block page_title %}Execution Logs{% endblock %}
+
+{% block content %}
+<!-- Search and Filters Panel -->
+<div class="glass-card p-3 mb-4 border-0">
+    <form method="GET" class="row g-3">
+        <!-- Search -->
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0" style="border-color: var(--card-border);"><i class="bi bi-search text-secondary"></i></span>
+                <input type="text" name="search" class="form-control form-control-custom ps-0 border-start-0" placeholder="Search by project name..." value="{{ active_search }}">
+            </div>
+        </div>
+
+        <!-- Filter Status -->
+        <div class="col-md-4">
+            <select name="status" class="form-select form-control-custom">
+                <option value="">Status: All Logs</option>
+                <option value="RUNNING" {% if active_status == 'RUNNING' %}selected{% endif %}>Running</option>
+                <option value="SUCCEEDED" {% if active_status == 'SUCCEEDED' %}selected{% endif %}>Succeeded</option>
+                <option value="FAILED" {% if active_status == 'FAILED' %}selected{% endif %}>Failed</option>
+            </select>
+        </div>
+
+        <!-- Submit -->
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-custom w-100">Filter</button>
+            <a href="{% url 'execution_history' %}" class="btn btn-outline-secondary border-0 d-flex align-items-center justify-content-center px-3" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Logs Table -->
+<div class="glass-card p-4 border-0">
+    <h5 class="text-white fw-bold mb-4">Pipeline Execution History</h5>
+
+    {% if executions %}
+        <div class="table-responsive">
+            <table class="table table-custom align-middle">
+                <thead>
+                    <tr>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Timestamp</th>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Agent Name</th>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Project Workspace</th>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Input / Output Tokens</th>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Latency</th>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Compliance Rating</th>
+                        <th class="text-secondary small fw-bold text-uppercase border-bottom-0">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exec in executions %}
+                        <tr>
+                            <td class="text-secondary small">{{ exec.created_at|date:"M d, H:i:s" }}</td>
+                            <td class="text-white fw-semibold small">{{ exec.agent.name }}</td>
+                            <td class="text-white small">
+                                <a href="{% url 'project_detail' exec.project.id %}" class="text-decoration-none text-white hover-text-primary">{{ exec.project.title }}</a>
+                            </td>
+                            <td class="text-secondary small">{{ exec.input_tokens }} / {{ exec.output_tokens }}</td>
+                            <td class="text-secondary small">{{ exec.execution_time_ms }} ms</td>
+                            <td class="small">
+                                {% if exec.evaluations.all %}
+                                    {% with eval=exec.evaluations.first %}
+                                        <span class="badge {% if eval.status == 'PASSED' %}bg-success{% elif eval.status == 'FAILED' %}bg-danger{% else %}bg-warning{% endif %}-glow">
+                                            {{ eval.get_status_display }}
+                                        </span>
+                                    {% endwith %}
+                                {% else %}
+                                    <span class="text-muted">Not Audited</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if exec.status == 'SUCCEEDED' %}bg-success{% elif exec.status == 'RUNNING' %}bg-warning{% else %}bg-danger{% endif %}-glow">
+                                    {{ exec.get_status_display }}
+                                </span>
+                                {% if exec.error_message %}
+                                    <div class="text-danger small mt-1 font-monospace" style="font-size: 0.7rem; max-width: 250px; overflow-wrap: break-word;">
+                                        Error: {{ exec.error_message }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <nav class="d-flex justify-content-center mt-4">
+                <ul class="pagination pagination-sm gap-2">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link glass-card text-secondary border-0 px-3 py-2" href="?page={{ page_obj.previous_page_number }}&search={{ active_search }}&status={{ active_status }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item"><span class="page-link glass-card text-white border-0 px-3 py-2">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link glass-card text-secondary border-0 px-3 py-2" href="?page={{ page_obj.next_page_number }}&search={{ active_search }}&status={{ active_status }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-activity text-muted fs-1 mb-3 block"></i>
+            <p class="text-secondary">No execution history matching filters.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

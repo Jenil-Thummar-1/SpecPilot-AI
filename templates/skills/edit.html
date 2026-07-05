@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Configure Skill - SpecPilot AI{% endblock %}
+{% block page_title %}Skill Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="glass-panel border-0">
+            <h4 class="text-white mb-3 fw-bold">Configure AI Skill Settings</h4>
+            <p class="text-secondary small mb-5">Edit capability metadata, parameter rules schemas, and sequence dependencies.</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row g-4">
+                    <!-- Name -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Skill Name</label>
+                        <input type="text" name="name" class="form-control form-control-custom" value="{{ form.name.value|default:skill.name }}" required>
+                    </div>
+
+                    <!-- Code Identifier -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Programmatic Slug</label>
+                        <input type="text" name="code_identifier" class="form-control form-control-custom" value="{{ form.code_identifier.value|default:skill.code_identifier }}" required>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">Description</label>
+                        <textarea name="description" rows="3" class="form-control form-control-custom" required>{{ form.description.value|default:skill.description }}</textarea>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">Category Grouping</label>
+                        <input type="text" name="category" class="form-control form-control-custom" value="{{ form.category.value|default:skill.category }}" required>
+                    </div>
+
+                    <!-- Execution Order -->
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">Execution Order Sequence</label>
+                        <input type="number" name="execution_order" class="form-control form-control-custom" value="{{ form.execution_order.value|default:skill.execution_order }}" required>
+                    </div>
+
+                    <!-- Dependencies -->
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">Dependencies (Comma-separated)</label>
+                        <input type="text" name="dependencies_str" class="form-control form-control-custom" value="{{ form.dependencies_str.value|default:skill.dependencies_str }}">
+                    </div>
+
+                    <!-- Parameters Schema -->
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">Input Parameters JSON Schema</label>
+                        <textarea name="parameters_schema" rows="5" class="form-control form-control-custom">{{ form.parameters_schema.value|default:skill.parameters_schema }}</textarea>
+                        <div class="form-text text-muted">JSON schema defining parameters expected by this tool. Must be valid JSON format.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
+                    <a href="{% url 'skill_list' %}" class="btn btn-outline-secondary border-0">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom px-4 py-2.5">
+                        Save Configurations
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

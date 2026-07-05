@@ -1,6 +1,9 @@
 import logging
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
+import config.prompts as prompts_library
 from apps.projects.models import Project
 from apps.agents.models import Agent, AgentExecution
 from apps.skills.models import Skill, SkillExecution
@@ -92,3 +95,29 @@ def dashboard_view(request):
     }
     
     return render(request, 'dashboard/index.html', context)
+
+class PromptLibraryView(LoginRequiredMixin, TemplateView):
+    """
+    Exposes reusable system prompt templates catalog.
+    """
+    template_name = 'dashboard/prompts.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Pull prompt template strings
+        context['prompts'] = {
+            'Requirements Analysis': prompts_library.REQUIREMENTS_PROMPT,
+            'PRD Generation': prompts_library.PRD_PROMPT,
+            'User Stories': prompts_library.USER_STORIES_PROMPT,
+            'Functional Requirements': prompts_library.FUNCTIONAL_PROMPT,
+            'Non-Functional Requirements': prompts_library.NON_FUNCTIONAL_PROMPT,
+            'Architecture Design': prompts_library.ARCHITECTURE_PROMPT,
+            'Database Design': prompts_library.DATABASE_PROMPT,
+            'API Interface Planning': prompts_library.API_PROMPT,
+            'Folder Structure Layout': prompts_library.FOLDER_STRUCTURE_PROMPT,
+            'Development Roadmap': prompts_library.ROADMAP_PROMPT,
+            'Security Checklist': prompts_library.SECURITY_PROMPT,
+            'Testing Checklist': prompts_library.TESTING_PROMPT,
+            'Deployment Planning': prompts_library.DEPLOYMENT_PROMPT,
+        }
+        return context

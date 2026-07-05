@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Skill - SpecPilot AI{% endblock %}
+{% block page_title %}Skill Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="glass-panel border-0">
+            <h4 class="text-white mb-3 fw-bold">Register Custom AI Skill</h4>
+            <p class="text-secondary small mb-5">Create reusable logic nodes or programmatic tools compatible with future Model Context Protocol (MCP) servers.</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row g-4">
+                    <!-- Name -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Skill Name</label>
+                        <input type="text" name="name" class="form-control form-control-custom" placeholder="e.g. Generate SQLite Schema" required>
+                    </div>
+
+                    <!-- Code Identifier -->
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary small fw-semibold">Programmatic Slug</label>
+                        <input type="text" name="code_identifier" class="form-control form-control-custom" placeholder="e.g. generate_sqlite_schema" required>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">Description</label>
+                        <textarea name="description" rows="3" class="form-control form-control-custom" placeholder="Detailed description of what this tool accomplishes." required></textarea>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">Category Grouping</label>
+                        <input type="text" name="category" class="form-control form-control-custom" value="General" required>
+                    </div>
+
+                    <!-- Execution Order -->
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">Execution Order Sequence</label>
+                        <input type="number" name="execution_order" class="form-control form-control-custom" value="1" required>
+                    </div>
+
+                    <!-- Dependencies -->
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small fw-semibold">Dependencies (Comma-separated)</label>
+                        <input type="text" name="dependencies_str" class="form-control form-control-custom" placeholder="e.g. read_prd,validate_specs">
+                    </div>
+
+                    <!-- Parameters Schema -->
+                    <div class="col-12">
+                        <label class="form-label text-secondary small fw-semibold">Input Parameters JSON Schema</label>
+                        <textarea name="parameters_schema" rows="5" class="form-control form-control-custom">{}</textarea>
+                        <div class="form-text text-muted">JSON schema defining parameters expected by this tool. Must be valid JSON format.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
+                    <a href="{% url 'skill_list' %}" class="btn btn-outline-secondary border-0">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom px-4 py-2.5">
+                        Register Skill
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

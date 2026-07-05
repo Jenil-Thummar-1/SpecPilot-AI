@@ -71,3 +71,39 @@ class MemoryService:
             context_parts.append(f"{role_display}: {entry.content}")
 
         return "\n".join(context_parts)
+
+    @staticmethod
+    def retrieve_relevant_context(project, query_text, limit=3):
+        """
+        Retrieves the most semantically relevant memory logs based on query keywords.
+        Uses standard case-insensitive SQLite text matching as a vector DB placeholder.
+        """
+        logger.info(f"Retrieving memory context matching query: '{query_text}'")
+        
+        entries = MemoryEntry.objects.filter(
+            session__conversation__project=project,
+            content__icontains=query_text
+        ).order_by('-importance_score')[:limit]
+
+        if not entries:
+            # Fallback: get recent summaries if keyword yields no matches
+            entries = MemoryEntry.objects.filter(
+                session__conversation__project=project,
+                memory_type=MEMORY_SUMMARY
+            ).order_by('-created_at')[:limit]
+
+        return entries
+
+    @staticmethod
+    def save_conversation_summary(project, summary_text):
+        """
+        Concludes planning sprints by saving a SUMMARY memory block to decrease token count.
+        """
+        logger.info(f"Compiling conversation summary for project: {project.title}")
+        return MemoryService.save_memory(
+            project=project,
+            role="SYSTEM",
+            content=summary_text,
+            memory_type=MEMORY_SUMMARY,
+            importance_score=0.8
+        )

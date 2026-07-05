@@ -55,7 +55,7 @@
                         <span class="fw-bold text-white">{{ health.overall_progress|floatformat:0 }}%</span>
                     </div>
                     <div class="progress" style="height: 8px; background: var(--card-border);">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ health.overall_progress }}%"></div>
+                        <div class="progress-bar bg-primary" role="progressbar" style="--progress-width: {{ health.overall_progress|floatformat:0 }}%; width: var(--progress-width);"></div>
                     </div>
                 </div>
 
@@ -269,7 +269,7 @@
                             <!-- Display quality evaluations if present -->
                             {% if art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
                                 {% with eval=art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
-                                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded" style="background: rgba(255,255,255,0.015); border-left: 4px solid {% if eval.status == 'PASSED' %}#10b981{% elif eval.status == 'FAILED' %}#ef4444{% else %}#eab308{% endif %};">
+                                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded border-start border-4 {% if eval.status == 'PASSED' %}border-success{% elif eval.status == 'FAILED' %}border-danger{% else %}border-warning{% endif %}" style="background: rgba(255,255,255,0.015);">
                                         <div class="small">
                                             <span class="text-secondary fw-semibold">Compliance Rating:</span>
                                             <span class="fw-bold {% if eval.status == 'PASSED' %}text-success{% elif eval.status == 'FAILED' %}text-danger{% else %}text-warning{% endif %}">{{ eval.get_status_display }}</span>
@@ -302,7 +302,7 @@
             {% if activities %}
                 <div class="d-flex flex-column gap-3">
                     {% for act in activities %}
-                        <div class="d-flex align-items-start gap-3 p-2 rounded" style="background: rgba(255,255,255,0.01); border-left: 3px solid {% if act.action_type == 'CREATED' %}#3b82f6{% elif act.action_type == 'RESTORED' %}#eab308{% elif act.action_type == 'STAGE_UPDATED' %}#a855f7{% else %}var(--primary){% endif %};">
+                        <div class="d-flex align-items-start gap-3 p-2 rounded {% if act.action_type == 'CREATED' %}activity-item-created{% elif act.action_type == 'RESTORED' %}activity-item-restored{% elif act.action_type == 'STAGE_UPDATED' %}activity-item-updated{% else %}activity-item-default{% endif %}" style="background: rgba(255,255,255,0.01);">
                             <div class="rounded-circle bg-primary-glow p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                 {% if act.action_type == 'CREATED' %}
                                     <i class="bi bi-plus-circle text-primary"></i>

@@ -322,3 +322,10 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #ef4444;
   background: #ef4444;
 }
+
+/* Activity item borders */
+.activity-item-created { border-left: 3px solid #3b82f6 !important; }
+.activity-item-restored { border-left: 3px solid #eab308 !important; }
+.activity-item-updated { border-left: 3px solid #a855f7 !important; }
+.activity-item-default { border-left: 3px solid var(--primary) !important; }
+
