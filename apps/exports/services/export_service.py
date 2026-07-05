@@ -1,17 +1,19 @@
 import os
 import json
 import logging
+import io
+import zipfile
 from django.conf import settings
 from django.core.files.base import ContentFile
 from apps.exports.models import ExportJob
 from apps.generator.models import GeneratedArtifact
-from config.constants import EXPORT_FORMAT_MARKDOWN, EXPORT_FORMAT_PDF, EXPORT_FORMAT_JSON
+from config.constants import EXPORT_FORMAT_MARKDOWN, EXPORT_FORMAT_PDF, EXPORT_FORMAT_JSON, EXPORT_FORMAT_ZIP
 
 logger = logging.getLogger('specpilot.ai')
 
 class ExportService:
     """
-    Business logic aggregator compiling project specifications into Markdown, PDF, or JSON.
+    Business logic aggregator compiling project specifications into Markdown, PDF, JSON, or ZIP packages.
     """
 
     @staticmethod
@@ -22,12 +24,20 @@ class ExportService:
         logger.info(f"Compiling Markdown blueprint for project '{project.title}'")
         
         # Load artifacts in lifecycle order
-        artifacts = GeneratedArtifact.objects.filter(project=project).order_by('step__order')
+        artifacts = GeneratedArtifact.objects.filter(project=project, is_approved=True).order_by('step__order')
+        if not artifacts.exists():
+            artifacts = GeneratedArtifact.objects.filter(project=project).order_by('step__order')
         
         parts = [
-            f"# SpecPilot AI Blueprint: {project.title}",
+            f"# SpecPilot AI Project Specification Blueprint: {project.title}",
             f"**Architecture Style:** {project.get_target_architecture_display()}",
-            f"**Description:** {project.description}",
+            f"**Predefined Category/Template:** {project.get_category_display()}",
+            f"**Elevator Pitch:** {project.short_description}",
+            f"**Detailed Scope:** {project.description}",
+            f"**Target Audience Personas:** {project.target_users}",
+            f"**Preferred Technology Stack:** {project.tech_stack}",
+            f"**Deployment Preference:** {project.deployment_preference}",
+            f"**Workspace Current Version:** v{project.current_version}",
             "\n---\n"
         ]
         
@@ -37,6 +47,37 @@ class ExportService:
             parts.append("\n---\n")
             
         return "\n".join(parts)
+
+    @classmethod
+    def compile_zip(cls, project):
+        """
+        Bundles individual specification documents as markdown files inside a clean ZIP directory format.
+        """
+        logger.info(f"Packaging ZIP spec blueprint archives for project '{project.title}'")
+        artifacts = GeneratedArtifact.objects.filter(project=project).order_by('step__order')
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Add project summary readme file
+            summary = (
+                f"# SpecPilot AI Blueprint Package: {project.title}\n"
+                f"Description: {project.description}\n"
+                f"Architecture Type: {project.get_target_architecture_display()}\n"
+                f"Version: v{project.current_version}\n"
+                f"Category Template: {project.get_category_display()}\n"
+                f"Deployment Target: {project.deployment_preference}\n"
+                f"Tech Stack: {project.tech_stack}\n"
+            )
+            zip_file.writestr("README.md", summary)
+            
+            # Package all generated files individually
+            for art in artifacts:
+                safe_title = "".join(c for c in art.title if c.isalnum() or c in (' ', '_', '-')).strip()
+                filename = f"{art.step.order:02d}_{safe_title.replace(' ', '_')}_v{art.version}.md"
+                zip_file.writestr(f"specifications/{filename}", art.content)
+                
+        zip_buffer.seek(0)
+        return zip_buffer.getvalue()
 
     @classmethod
     def run_export_job(cls, project, export_format):
@@ -77,7 +118,9 @@ class ExportService:
                             "step_order": art.step.order if art.step else 0,
                             "title": art.title,
                             "artifact_type": art.artifact_type,
-                            "content": art.content
+                            "content": art.content,
+                            "version": art.version,
+                            "is_approved": art.is_approved
                         }
                         for art in artifacts
                     ]
@@ -86,6 +129,12 @@ class ExportService:
                 file_name = f"{filename}.json"
                 job.download_file.save(file_name, ContentFile(content_str.encode('utf-8')))
                 
+            elif export_format == EXPORT_FORMAT_ZIP:
+                # Zip compilation
+                zip_data = cls.compile_zip(project)
+                file_name = f"{filename}.zip"
+                job.download_file.save(file_name, ContentFile(zip_data))
+
             elif export_format == EXPORT_FORMAT_PDF:
                 # PDF building routine using ReportLab
                 file_name = f"{filename}.pdf"
@@ -98,7 +147,6 @@ class ExportService:
                 doc = SimpleDocTemplate(file_path, pagesize=letter)
                 styles = getSampleStyleSheet()
                 
-                # Custom styles to fit dark/light modern formats
                 title_style = ParagraphStyle(
                     'DocTitle',
                     parent=styles['Heading1'],
@@ -127,15 +175,16 @@ class ExportService:
                 
                 story = [
                     Paragraph(f"SpecPilot AI Project Blueprint: {project.title}", title_style),
+                    Paragraph(f"<b>Category Template:</b> {project.get_category_display()}", body_style),
                     Paragraph(f"<b>Architecture:</b> {project.get_target_architecture_display()}", body_style),
                     Paragraph(f"<b>Scope Description:</b> {project.description}", body_style),
+                    Paragraph(f"<b>Tech Stack:</b> {project.tech_stack}", body_style),
                     Spacer(1, 15)
                 ]
                 
                 artifacts = GeneratedArtifact.objects.filter(project=project).order_by('step__order')
                 for art in artifacts:
                     story.append(Paragraph(f"Phase {art.step.order if art.step else 'X'}: {art.title}", h2_style))
-                    # Basic paragraph styling (converting markdown newlines to HTML breaks)
                     paragraphs = art.content.split('\n')
                     for p in paragraphs:
                         if p.strip():

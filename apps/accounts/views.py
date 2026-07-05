@@ -1,8 +1,9 @@
 import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from apps.accounts.models import User
+from apps.accounts.models import User, Profile
 
 logger = logging.getLogger('specpilot.ai')
 
@@ -76,3 +77,32 @@ def logout_view(request):
     logger.info(f"User '{username}' logged out.")
     messages.info(request, "You have been logged out.")
     return redirect('landing')
+
+@login_required
+def settings_view(request):
+    """
+    Handles user preferences settings: custom API key, light/dark themes, and bio profiles.
+    """
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        api_key = request.POST.get('api_key_override', '').strip()
+        theme = request.POST.get('theme_preference', 'dark')
+        bio = request.POST.get('bio', '').strip()
+        
+        email = request.POST.get('email', '').strip()
+        
+        # Save standard email
+        if email:
+            request.user.email = email
+            request.user.save()
+
+        profile.api_key_override = api_key if api_key else None
+        profile.theme_preference = theme
+        profile.bio = bio
+        profile.save()
+
+        messages.success(request, "System preferences saved successfully!")
+        return redirect('settings')
+
+    return render(request, 'accounts/settings.html', {'profile': profile})

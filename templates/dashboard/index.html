@@ -1,16 +1,64 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - SpecPilot AI Workspace{% endblock %}
+{% block title %}Enterprise Dashboard - SpecPilot AI{% endblock %}
 {% block page_title %}SpecPilot Workspace{% endblock %}
 
 {% block content %}
+<!-- Enterprise KPI Analytics cards row -->
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Success Rating</span>
+                <h4 class="mb-0 fw-bold text-white">{{ analytics.success_rate }}%</h4>
+            </div>
+            <div class="rounded bg-primary-glow p-2.5" style="background: rgba(16, 185, 129, 0.15);">
+                <i class="bi bi-shield-check text-success fs-5"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Quality Avg Score</span>
+                <h4 class="mb-0 fw-bold text-white">{{ analytics.avg_quality_score }}/10</h4>
+            </div>
+            <div class="rounded bg-accent-glow p-2.5" style="background: rgba(168, 85, 247, 0.15);">
+                <i class="bi bi-star-fill text-accent fs-5"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Tokens Consumed</span>
+                <h4 class="mb-0 fw-bold text-white">{{ analytics.total_tokens }}</h4>
+            </div>
+            <div class="rounded bg-primary-glow p-2.5">
+                <i class="bi bi-cpu text-primary fs-5"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Average Latency</span>
+                <h4 class="mb-0 fw-bold text-white">{{ analytics.avg_latency_ms }} ms</h4>
+            </div>
+            <div class="rounded bg-accent-glow p-2.5" style="background: rgba(234, 179, 8, 0.15);">
+                <i class="bi bi-lightning-charge-fill text-warning fs-5"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mb-4">
     <!-- Stat card 1 -->
     <div class="col-md-3">
         <div class="glass-card p-4 h-100 border-0 d-flex align-items-center justify-content-between">
             <div>
                 <span class="text-secondary small fw-semibold uppercase block mb-1">Active Projects</span>
-                <h3 class="mb-0 fw-bold">{{ recent_projects|length }}</h3>
+                <h3 class="mb-0 fw-bold text-white">{{ analytics.total_projects }}</h3>
             </div>
             <div class="rounded bg-primary-glow p-3">
                 <i class="bi bi-briefcase-fill text-primary fs-4"></i>
@@ -22,7 +70,7 @@
         <div class="glass-card p-4 h-100 border-0 d-flex align-items-center justify-content-between">
             <div>
                 <span class="text-secondary small fw-semibold uppercase block mb-1">Agent Executions</span>
-                <h3 class="mb-0 fw-bold">{{ executions_count }}</h3>
+                <h3 class="mb-0 fw-bold text-white">{{ executions_count }}</h3>
             </div>
             <div class="rounded bg-accent-glow p-3">
                 <i class="bi bi-cpu-fill text-accent fs-4"></i>
@@ -34,7 +82,7 @@
         <div class="glass-card p-4 h-100 border-0 d-flex align-items-center justify-content-between">
             <div>
                 <span class="text-secondary small fw-semibold uppercase block mb-1">Generated Blueprints</span>
-                <h3 class="mb-0 fw-bold">{{ artifacts_count }}</h3>
+                <h3 class="mb-0 fw-bold text-white">{{ artifacts_count }}</h3>
             </div>
             <div class="rounded bg-primary-glow p-3" style="background: rgba(16, 185, 129, 0.1);">
                 <i class="bi bi-file-earmark-code-fill text-success fs-4"></i>
@@ -45,8 +93,8 @@
     <div class="col-md-3">
         <div class="glass-card p-4 h-100 border-0 d-flex align-items-center justify-content-between">
             <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Memory Tokens</span>
-                <h3 class="mb-0 fw-bold">{{ memory_count }}</h3>
+                <span class="text-secondary small fw-semibold uppercase block mb-1">Memory Blocks</span>
+                <h3 class="mb-0 fw-bold text-white">{{ memory_count }}</h3>
             </div>
             <div class="rounded bg-accent-glow p-3" style="background: rgba(234, 179, 8, 0.1);">
                 <i class="bi bi-database-fill text-warning fs-4"></i>
@@ -60,7 +108,7 @@
     <div class="col-lg-8">
         <div class="glass-card p-4 h-100 border-0">
             <div class="d-flex align-items-center justify-content-between mb-4">
-                <h5 class="mb-0 fw-bold">Recent Projects Workspace</h5>
+                <h5 class="mb-0 fw-bold text-white">Recent Projects Workspace</h5>
                 <a href="{% url 'project_create' %}" class="btn btn-sm btn-primary-custom">
                     <i class="bi bi-plus-circle me-1"></i> New Project
                 </a>
@@ -71,18 +119,18 @@
                     <table class="table table-borderless align-middle text-secondary mb-0">
                         <thead>
                             <tr style="border-bottom: 1px solid var(--card-border);">
-                                <th class="text-primary pb-3">Project Title</th>
-                                <th class="text-primary pb-3">Architecture</th>
-                                <th class="text-primary pb-3">Status</th>
-                                <th class="text-primary pb-3">Planning Progress</th>
-                                <th class="text-primary pb-3 text-end">Action</th>
+                                <th class="text-primary pb-3 small fw-bold">Project Title</th>
+                                <th class="text-primary pb-3 small fw-bold">Architecture</th>
+                                <th class="text-primary pb-3 small fw-bold">Status</th>
+                                <th class="text-primary pb-3 small fw-bold">Planning Progress</th>
+                                <th class="text-primary pb-3 text-end small fw-bold">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for project in recent_projects %}
                                 <tr>
                                     <td class="py-3 fw-semibold text-white">{{ project.title }}</td>
-                                    <td>{{ project.get_target_architecture_display }}</td>
+                                    <td class="small">{{ project.get_target_architecture_display }}</td>
                                     <td>
                                         <span class="badge rounded-pill {% if project.status == 'COMPLETE' %}bg-success{% elif project.status == 'PLANNING' %}bg-primary{% else %}bg-secondary{% endif %}-glow text-white px-2 py-1">
                                             {{ project.get_status_display }}
@@ -91,13 +139,13 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="progress flex-grow-1" style="height: 6px; background: var(--card-border);">
-                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ project.plan.overall_progress_pct|default:0 }}%"></div>
+                                                <div class="progress-bar bg-primary" role="progressbar" style="--progress-pct: {{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%; width: var(--progress-pct);"></div>
                                             </div>
-                                            <span class="small text-secondary">{{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%</span>
+                                            <span class="small text-secondary fw-semibold">{{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%</span>
                                         </div>
                                     </td>
                                     <td class="text-end">
-                                        <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-primary border-0">
+                                        <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-primary border-0 py-1 px-3 small">
                                             Open Workspace <i class="bi bi-arrow-right-short"></i>
                                         </a>
                                     </td>
@@ -119,7 +167,7 @@
     <!-- AI Agents Control -->
     <div class="col-lg-4">
         <div class="glass-card p-4 h-100 border-0">
-            <h5 class="mb-4 fw-bold">Active AI Agent Personnel</h5>
+            <h5 class="mb-4 fw-bold text-white">Active AI Agent Personnel</h5>
             
             <div class="d-flex flex-column gap-3">
                 {% for agent in agents %}
@@ -153,8 +201,8 @@
 <div class="row g-4">
     <!-- Reusable Skills -->
     <div class="col-md-6">
-        <div class="glass-card p-4 border-0">
-            <h5 class="mb-4 fw-bold">Seeded AI Skillsets (MCP Compatible)</h5>
+        <div class="glass-card p-4 border-0 h-100">
+            <h5 class="mb-4 fw-bold text-white">Seeded AI Skillsets (MCP Compatible)</h5>
             <div class="row g-3">
                 {% for skill in skills %}
                     <div class="col-md-6">
@@ -175,8 +223,8 @@
     
     <!-- Export history -->
     <div class="col-md-6">
-        <div class="glass-card p-4 border-0">
-            <h5 class="mb-4 fw-bold">Recent Output Exports</h5>
+        <div class="glass-card p-4 border-0 h-100">
+            <h5 class="mb-4 fw-bold text-white">Recent Output Exports</h5>
             {% if exports %}
                 <ul class="list-group list-group-flush" style="background: transparent;">
                     {% for job in exports %}

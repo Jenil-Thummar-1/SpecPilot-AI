@@ -341,3 +341,31 @@ def export_project_view(request, project_id):
             messages.error(request, f"Export compilation failed: {job.error_message}")
             
     return redirect('project_detail', project_id=project.id)
+
+class ProjectTimelineView(LoginRequiredMixin, DetailView):
+    """
+    Chronological workflow audit viewer logging stages, revisions, and QA scores.
+    """
+    model = Project
+    template_name = 'projects/timeline.html'
+    pk_url_kwarg = 'project_id'
+    context_object_name = 'project'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.get_object()
+        
+        # Load activity log history
+        context['activities'] = ActivityLog.objects.filter(project=project).order_by('-created_at')
+        
+        # Load all generated versions of artifacts
+        context['artifacts'] = GeneratedArtifact.objects.filter(project=project).order_by('-created_at')
+        
+        # Load all evaluations reports
+        from apps.evaluation.models import Evaluation
+        context['evaluations'] = Evaluation.objects.filter(
+            agent_execution__project=project
+        ).order_by('-created_at')
+        
+        return context
+

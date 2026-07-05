@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}Timeline Audit: {{ project.title }} - SpecPilot AI{% endblock %}
+{% block page_title %}Chronological Audit Log{% endblock %}
+
+{% block content %}
+<div class="glass-card p-4 border-0 mb-4 d-flex align-items-center justify-content-between">
+    <div>
+        <h5 class="text-white fw-bold mb-1">Project Workspace Audit Logs</h5>
+        <p class="text-secondary small mb-0">Review chronological log listings, QA check scores, document versions history, and system-wide agent activity logs for <strong>{{ project.title }}</strong></p>
+    </div>
+    <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-secondary border-0">
+        <i class="bi bi-arrow-left me-1"></i> Back to Workspace
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Quick Stats -->
+    <div class="col-lg-4">
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-3">Audit Summary</h5>
+            
+            <div class="d-flex flex-column gap-3" style="font-size: 0.85rem;">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Total Activity Logged:</span>
+                    <span class="text-white fw-bold">{{ activities.count }} Events</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Generated Artifacts:</span>
+                    <span class="text-white fw-bold">{{ artifacts.count }} Drafts</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Compliance Runs:</span>
+                    <span class="text-white fw-bold">{{ evaluations.count }} Reports</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Workspace Version:</span>
+                    <span class="badge bg-primary-glow text-primary">v{{ project.current_version }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Interactive Audit Tabs -->
+    <div class="col-lg-8">
+        <div class="glass-card p-4 border-0">
+            <!-- Tabs header -->
+            <ul class="nav nav-tabs border-0 gap-2 mb-4" id="timelineTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2 active text-white" 
+                            style="background: rgba(255,255,255,0.02);"
+                            id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit-pane" type="button" role="tab" aria-controls="audit-pane" aria-selected="true">
+                        Activity Audit Logs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2" 
+                            style="background: rgba(255,255,255,0.02);"
+                            id="qa-tab" data-bs-toggle="tab" data-bs-target="#qa-pane" type="button" role="tab" aria-controls="qa-pane" aria-selected="false">
+                        QA Evaluation Reports
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2" 
+                            style="background: rgba(255,255,255,0.02);"
+                            id="rev-tab" data-bs-toggle="tab" data-bs-target="#rev-pane" type="button" role="tab" aria-controls="rev-pane" aria-selected="false">
+                        Specs Revisions History
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content panes -->
+            <div class="tab-content" id="timelineTabContent">
+                <!-- Activity Audit Logs -->
+                <div class="tab-pane fade show active" id="audit-pane" role="tabpanel" aria-labelledby="audit-tab">
+                    {% if activities %}
+                        <div class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
+                            {% for act in activities %}
+                                <div class="d-flex align-items-start gap-3 p-3 rounded" style="background: rgba(255,255,255,0.015); border-left: 3px solid {% if act.action_type == 'CREATED' %}#3b82f6{% elif act.action_type == 'RESTORED' %}#eab308{% elif act.action_type == 'STAGE_UPDATED' %}#a855f7{% else %}var(--primary){% endif %};">
+                                    <div class="rounded bg-primary-glow p-2 d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-clock-history"></i>
+                                    </div>
+                                    <div>
+                                        <div class="small fw-bold text-white mb-0.5">{{ act.description }}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                            Performed by: {{ act.user.username|default:"AI System" }} | {{ act.created_at|date:"M d, Y - H:i:s" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small py-4 text-center">No activity history logged yet.</p>
+                    {% endif %}
+                </div>
+
+                <!-- QA Evaluation Reports -->
+                <div class="tab-pane fade" id="qa-pane" role="tabpanel" aria-labelledby="qa-tab">
+                    {% if evaluations %}
+                        <div class="d-flex flex-column gap-4" style="max-height: 500px; overflow-y: auto;">
+                            {% for eval in evaluations %}
+                                <div class="p-3.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
+                                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.05);">
+                                        <div>
+                                            <h6 class="text-white fw-bold mb-0.5 small">{{ eval.agent_execution.agent.name }} Run</h6>
+                                            <span class="text-muted" style="font-size: 0.7rem;">Time: {{ eval.created_at|date:"M d, H:i" }}</span>
+                                        </div>
+                                        <span class="badge {% if eval.status == 'PASSED' %}bg-success{% elif eval.status == 'FAILED' %}bg-danger{% else %}bg-warning{% endif %}-glow">
+                                            {{ eval.get_status_display }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Quality scores metric rows -->
+                                    <div class="row g-2">
+                                        {% for score in eval.scores.all %}
+                                            <div class="col-md-6">
+                                                <div class="p-2 rounded" style="background: rgba(0,0,0,0.15); font-size: 0.75rem;">
+                                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                                        <span class="fw-semibold text-white">{{ score.get_metric_name_display }}</span>
+                                                        <span class="fw-bold {% if score.score >= 8.0 %}text-success{% elif score.score >= 5.0 %}text-warning{% else %}text-danger{% endif %}">{{ score.score }}/10</span>
+                                                    </div>
+                                                    <div class="text-secondary" style="font-size: 0.7rem;">{{ score.rationalization }}</div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small py-4 text-center">No QA evaluation audits generated yet.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Specs Revisions History -->
+                <div class="tab-pane fade" id="rev-pane" role="tabpanel" aria-labelledby="rev-tab">
+                    {% if artifacts %}
+                        <div class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
+                            {% for art in artifacts %}
+                                <div class="p-3 rounded d-flex align-items-center justify-content-between" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border); font-size: 0.8rem;">
+                                    <div>
+                                        <span class="fw-semibold text-white block">{{ art.title }} Document</span>
+                                        <span class="text-muted" style="font-size: 0.75rem;">Version v{{ art.version }} | Saved: {{ art.created_at|date:"M d, H:i" }}</span>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge {% if art.is_approved %}bg-success{% else %}bg-warning{% endif %}-glow">
+                                            {% if art.is_approved %}Approved{% else %}Draft{% endif %}
+                                        </span>
+                                        <a href="{% url 'artifact_detail' art.id %}" class="btn btn-sm btn-outline-primary border-0 px-2 py-0.5" style="font-size: 0.75rem;">
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small py-4 text-center">No specification revisions found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

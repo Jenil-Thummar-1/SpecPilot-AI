@@ -84,6 +84,41 @@ def dashboard_view(request):
     # Recent exports
     exports = ExportJob.objects.filter(project__user=user).order_by('-created_at')[:5]
 
+    # Advanced Enterprise Analytics Calculations
+    from django.db.models import Sum, Avg
+    token_stats = AgentExecution.objects.filter(project__user=user).aggregate(
+        total_input=Sum('input_tokens'),
+        total_output=Sum('output_tokens'),
+        avg_latency=Avg('execution_time_ms')
+    )
+    total_input = token_stats.get('total_input') or 0
+    total_output = token_stats.get('total_output') or 0
+    avg_latency = token_stats.get('avg_latency') or 0
+
+    succeeded_execs = AgentExecution.objects.filter(project__user=user, status='SUCCEEDED').count()
+    success_rate = (succeeded_execs / executions_count * 100) if executions_count > 0 else 100
+
+    from apps.evaluation.models import QualityScore
+    avg_quality = QualityScore.objects.filter(
+        evaluation__agent_execution__project__user=user,
+        metric_name='OVERALL_CONFIDENCE'
+    ).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+
+    # Skills utilization count
+    from apps.skills.models import SkillExecution
+    skills_utilized = SkillExecution.objects.filter(agent_execution__project__user=user).count()
+
+    analytics = {
+        'total_input_tokens': total_input,
+        'total_output_tokens': total_output,
+        'total_tokens': total_input + total_output,
+        'avg_latency_ms': int(avg_latency),
+        'success_rate': round(success_rate, 1),
+        'avg_quality_score': round(avg_quality, 1),
+        'skills_utilized': skills_utilized,
+        'total_projects': Project.objects.filter(user=user).count()
+    }
+
     context = {
         'recent_projects': recent_projects,
         'agents': agents,
@@ -92,6 +127,7 @@ def dashboard_view(request):
         'artifacts_count': artifacts_count,
         'memory_count': memory_count,
         'exports': exports,
+        'analytics': analytics,
     }
     
     return render(request, 'dashboard/index.html', context)
