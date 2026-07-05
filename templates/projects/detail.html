@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} Workspace - SpecPilot AI{% endblock %}
+{% block page_title %}Planning Workspace{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Left Column: Project Overview and Lifecycle Steps -->
+    <div class="col-lg-5">
+        <div class="glass-card p-4 mb-4 border-0">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="text-white fw-bold mb-0">{{ project.title }}</h4>
+                <span class="badge bg-primary-glow text-primary">{{ project.get_target_architecture_display }}</span>
+            </div>
+            <p class="text-secondary small mb-4">{{ project.description }}</p>
+            
+            <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.85rem;">
+                <span class="text-secondary fw-semibold">Workspace Planning Progress</span>
+                <span class="fw-bold text-white">{{ plan.overall_progress_pct|floatformat:0 }}%</span>
+            </div>
+            <div class="progress mb-2" style="height: 8px; background: var(--card-border);">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ plan.overall_progress_pct }}%"></div>
+            </div>
+        </div>
+
+        <!-- Planning Timeline Steps -->
+        <div class="glass-card p-4 border-0">
+            <h5 class="text-white fw-bold mb-4">Planning Lifecycle Steps (14 Phases)</h5>
+            
+            <div class="planning-timeline">
+                {% for step in steps %}
+                    <div class="timeline-item {% if step.status == 'COMPLETED' %}completed{% elif step.status == 'RUNNING' %}running{% elif step.status == 'FAILED' %}failed{% endif %}">
+                        <div class="timeline-dot"></div>
+                        <div class="glass-card p-3 border-0 ms-2" style="background: rgba(255,255,255,0.01);">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="mb-0 fw-bold text-white small">Phase {{ step.order }}: {{ step.title }}</h6>
+                                <span class="badge {% if step.status == 'COMPLETED' %}bg-success{% elif step.status == 'RUNNING' %}bg-warning{% elif step.status == 'FAILED' %}bg-danger{% else %}bg-secondary{% endif %}-glow" style="font-size: 0.65rem;">
+                                    {{ step.get_status_display }}
+                                </span>
+                            </div>
+                            <p class="text-secondary mb-3" style="font-size: 0.8rem;">{{ step.description }}</p>
+                            
+                            <div class="d-flex align-items-center justify-content-between">
+                                <!-- Dates -->
+                                <span class="small text-muted" style="font-size: 0.7rem;">
+                                    {% if step.completed_at %}
+                                        Done: {{ step.completed_at|date:"M d, H:i" }}
+                                    {% elif step.started_at %}
+                                        Started: {{ step.started_at|date:"M d, H:i" }}
+                                    {% else %}
+                                        Pending activation
+                                    {% endif %}
+                                </span>
+                                
+                                <!-- Run triggers -->
+                                {% if step.status != 'COMPLETED' and step.status != 'RUNNING' %}
+                                    <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom px-3 py-1" style="font-size: 0.75rem;">
+                                        <i class="bi bi-play-fill"></i> Run Agent Task
+                                    </a>
+                                {% elif step.status == 'RUNNING' %}
+                                    <button class="btn btn-sm btn-outline-warning border-0 disabled" style="font-size: 0.75rem;">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span> Thinking...
+                                    </button>
+                                {% else %}
+                                    <span class="text-success small fw-semibold" style="font-size: 0.75rem;">
+                                        <i class="bi bi-patch-check-fill me-1"></i> Completed
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Compiled Documents and Compilation Export Panel -->
+    <div class="col-lg-7">
+        <!-- Export compilation panel -->
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-3">Compile & Export Project Blueprint</h5>
+            <p class="text-secondary small mb-4">Pack all successfully planned software design phases into a final downloadable package.</p>
+            
+            <form method="POST" action="{% url 'export_project' project.id %}" class="row g-3 align-items-center">
+                {% csrf_token %}
+                <div class="col-md-7">
+                    <select name="format" class="form-select form-control-custom" required>
+                        <option value="MARKDOWN">Markdown Document (.md)</option>
+                        <option value="PDF">Formatted PDF Blueprint (.pdf)</option>
+                        <option value="JSON">Structured JSON Spec Schema (.json)</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2" {% if not artifacts %}disabled{% endif %}>
+                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Generate Download
+                    </button>
+                </div>
+            </form>
+            
+            {% if not artifacts %}
+                <div class="form-text text-danger mt-2 small"><i class="bi bi-info-circle-fill"></i> You must complete at least one planning stage to generate exports.</div>
+            {% endif %}
+            
+            <!-- Export log -->
+            {% if export_jobs %}
+                <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.05);">
+                    <h6 class="text-white fw-semibold small mb-2">Generated Downloads Archive</h6>
+                    <div class="d-flex flex-column gap-2">
+                        {% for job in export_jobs %}
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi {% if job.export_format == 'PDF' %}bi-filetype-pdf text-danger{% elif job.export_format == 'JSON' %}bi-filetype-json text-warning{% else %}bi-file-earmark-markdown-fill text-primary{% endif %}"></i>
+                                    <span class="small text-secondary">{{ job.export_format }} Blueprint - {{ job.created_at|date:"M d, H:i" }}</span>
+                                </div>
+                                {% if job.status == 'SUCCEEDED' %}
+                                    <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                {% else %}
+                                    <span class="small text-danger">Failed</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Generated Documents Tabs -->
+        <div class="glass-card p-4 border-0">
+            <h5 class="text-white fw-bold mb-4">Generated Spec Blueprints</h5>
+            
+            {% if artifacts %}
+                <ul class="nav nav-tabs border-0 gap-2 mb-4" id="artifactTabs" role="tablist">
+                    {% for art in artifacts %}
+                        <li class="nav-item" role="presentation">
+                            <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2 {% if forloop.first %}active text-white{% endif %}" 
+                                    style="background: rgba(255,255,255,0.02);"
+                                    id="art-tab-{{ art.id }}" 
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#art-pane-{{ art.id }}" 
+                                    type="button" 
+                                    role="tab" 
+                                    aria-controls="art-pane-{{ art.id }}" 
+                                    aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                                {{ art.title }}
+                            </button>
+                        </li>
+                    {% endfor %}
+                </ul>
+                
+                <div class="tab-content" id="artifactTabContent">
+                    {% for art in artifacts %}
+                        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="art-pane-{{ art.id }}" role="tabpanel" aria-labelledby="art-tab-{{ art.id }}">
+                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05);">
+                                <h6 class="text-white fw-bold mb-0">{{ art.title }} Document</h6>
+                                <span class="small text-muted">Version {{ art.version }}</span>
+                            </div>
+                            
+                            <!-- Display heuristic score evaluations -->
+                            {% if art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
+                                {% with eval=art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
+                                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded" style="background: rgba(255,255,255,0.015); border-left: 4px solid {% if eval.status == 'PASSED' %}#10b981{% elif eval.status == 'FAILED' %}#ef4444{% else %}#eab308{% endif %};">
+                                        <div class="small">
+                                            <span class="text-secondary fw-semibold">Compliance Rating:</span>
+                                            <span class="fw-bold {% if eval.status == 'PASSED' %}text-success{% elif eval.status == 'FAILED' %}text-danger{% else %}text-warning{% endif %}">{{ eval.get_status_display }}</span>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            {% for score in eval.scores.all %}
+                                                <span class="badge rounded bg-outline-secondary" style="font-size: 0.65rem; border: 1px solid var(--card-border);">{{ score.get_metric_name_display }}: {{ score.score }}/10</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endwith %}
+                            {% endif %}
+                            
+                            <!-- Artifact raw text scroll box -->
+                            <div class="p-3 rounded text-secondary overflow-y-auto" style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.85rem; max-height: 500px; white-space: pre-wrap;">{{ art.content }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-file-earmark-code text-muted fs-1 mb-3 block"></i>
+                    <p class="text-secondary">No documents generated yet. Run agent tasks in the timeline to initialize files.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

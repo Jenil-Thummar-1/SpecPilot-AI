@@ -1,0 +1,187 @@
+"""
+Global Constants for SpecPilot AI.
+Defines enumeration types, status configurations, system default settings, and limits.
+"""
+
+# Project Statuses
+PROJECT_STATUS_DRAFT = 'DRAFT'
+PROJECT_STATUS_PLANNING = 'PLANNING'
+PROJECT_STATUS_COMPLETE = 'COMPLETE'
+PROJECT_STATUS_FAILED = 'FAILED'
+
+PROJECT_STATUS_CHOICES = [
+    (PROJECT_STATUS_DRAFT, 'Draft'),
+    (PROJECT_STATUS_PLANNING, 'Planning In Progress'),
+    (PROJECT_STATUS_COMPLETE, 'Complete'),
+    (PROJECT_STATUS_FAILED, 'Failed'),
+]
+
+# Architecture Patterns
+ARCH_MONOLITH = 'MONOLITH'
+ARCH_MICROSERVICES = 'MICROSERVICES'
+ARCH_SERVERLESS = 'SERVERLESS'
+ARCH_EVENT_DRIVEN = 'EVENT_DRIVEN'
+
+ARCH_CHOICES = [
+    (ARCH_MONOLITH, 'Monolithic Architecture'),
+    (ARCH_MICROSERVICES, 'Microservices Architecture'),
+    (ARCH_SERVERLESS, 'Serverless Architecture'),
+    (ARCH_EVENT_DRIVEN, 'Event-Driven Architecture'),
+]
+
+# Agent Roles
+AGENT_ROLE_ARCHITECT = 'ARCHITECT'
+AGENT_ROLE_PLANNER = 'PLANNER'
+AGENT_ROLE_WRITER = 'WRITER'
+AGENT_ROLE_QA = 'QA'
+
+AGENT_ROLE_CHOICES = [
+    (AGENT_ROLE_ARCHITECT, 'AI Project Architect'),
+    (AGENT_ROLE_PLANNER, 'AI Software Planner'),
+    (AGENT_ROLE_WRITER, 'AI Technical Writer'),
+    (AGENT_ROLE_QA, 'AI Quality Assurance'),
+]
+
+# Agent Statuses
+AGENT_STATUS_IDLE = 'IDLE'
+AGENT_STATUS_THINKING = 'THINKING'
+AGENT_STATUS_EXECUTING = 'EXECUTING'
+AGENT_STATUS_OFFLINE = 'OFFLINE'
+
+AGENT_STATUS_CHOICES = [
+    (AGENT_STATUS_IDLE, 'Idle'),
+    (AGENT_STATUS_THINKING, 'Thinking...'),
+    (AGENT_STATUS_EXECUTING, 'Executing Task'),
+    (AGENT_STATUS_OFFLINE, 'Offline'),
+]
+
+# Agent Execution Statuses
+EXEC_STATUS_RUNNING = 'RUNNING'
+EXEC_STATUS_SUCCEEDED = 'SUCCEEDED'
+EXEC_STATUS_FAILED = 'FAILED'
+
+EXEC_STATUS_CHOICES = [
+    (EXEC_STATUS_RUNNING, 'Running'),
+    (EXEC_STATUS_SUCCEEDED, 'Succeeded'),
+    (EXEC_STATUS_FAILED, 'Failed'),
+]
+
+# Memory Entry Types
+MEMORY_SHORT_TERM = 'SHORT_TERM'
+MEMORY_LONG_TERM = 'LONG_TERM'
+MEMORY_SUMMARY = 'SUMMARY'
+
+MEMORY_TYPE_CHOICES = [
+    (MEMORY_SHORT_TERM, 'Short-Term Memory'),
+    (MEMORY_LONG_TERM, 'Long-Term Memory'),
+    (MEMORY_SUMMARY, 'System Summary'),
+]
+
+# Message Roles
+ROLE_SYSTEM = 'SYSTEM'
+ROLE_USER = 'USER'
+ROLE_AGENT = 'AGENT'
+ROLE_TOOL = 'TOOL'
+
+ROLE_CHOICES = [
+    (ROLE_SYSTEM, 'System Prompt'),
+    (ROLE_USER, 'User Input'),
+    (ROLE_AGENT, 'Agent Response'),
+    (ROLE_TOOL, 'Tool Output'),
+]
+
+# Planning Step Types
+STEP_IDEA = 'IDEA'
+STEP_REQUIREMENTS = 'REQUIREMENTS'
+STEP_PRD = 'PRD'
+STEP_USER_STORIES = 'USER_STORIES'
+STEP_FUNCTIONAL = 'FUNCTIONAL_REQS'
+STEP_NON_FUNCTIONAL = 'NON_FUNCTIONAL_REQS'
+STEP_ARCHITECTURE = 'ARCHITECTURE'
+STEP_DATABASE = 'DATABASE_DESIGN'
+STEP_API = 'API_DESIGN'
+STEP_FOLDER_STRUCTURE = 'FOLDER_STRUCTURE'
+STEP_ROADMAP = 'DEVELOPMENT_ROADMAP'
+STEP_SECURITY = 'SECURITY_CHECKLIST'
+STEP_TESTING = 'TESTING_CHECKLIST'
+STEP_DEPLOYMENT = 'DEPLOYMENT_PLAN'
+
+PLAN_STEP_CHOICES = [
+    (STEP_IDEA, 'Project Idea'),
+    (STEP_REQUIREMENTS, 'Core Requirements'),
+    (STEP_PRD, 'Product Requirements Document (PRD)'),
+    (STEP_USER_STORIES, 'User Stories'),
+    (STEP_FUNCTIONAL, 'Functional Requirements'),
+    (STEP_NON_FUNCTIONAL, 'Non-Functional Requirements'),
+    (STEP_ARCHITECTURE, 'System Architecture Design'),
+    (STEP_DATABASE, 'Database Design'),
+    (STEP_API, 'API Interface Design'),
+    (STEP_FOLDER_STRUCTURE, 'Codebase Folder Structure'),
+    (STEP_ROADMAP, 'Development Roadmap'),
+    (STEP_SECURITY, 'Security Checklist'),
+    (STEP_TESTING, 'Testing Checklist'),
+    (STEP_DEPLOYMENT, 'Deployment Plan'),
+]
+
+# Plan Step Statuses
+STEP_STATUS_PENDING = 'PENDING'
+STEP_STATUS_RUNNING = 'RUNNING'
+STEP_STATUS_COMPLETED = 'COMPLETED'
+STEP_STATUS_FAILED = 'FAILED'
+STEP_STATUS_SKIPPED = 'SKIPPED'
+
+STEP_STATUS_CHOICES = [
+    (STEP_STATUS_PENDING, 'Pending'),
+    (STEP_STATUS_RUNNING, 'Running'),
+    (STEP_STATUS_COMPLETED, 'Completed'),
+    (STEP_STATUS_FAILED, 'Failed'),
+    (STEP_STATUS_SKIPPED, 'Skipped'),
+]
+
+# Artifact Types
+ARTIFACT_MARKDOWN = 'MARKDOWN'
+ARTIFACT_JSON = 'JSON'
+ARTIFACT_YAML = 'YAML'
+ARTIFACT_TEXT = 'TEXT'
+
+ARTIFACT_TYPE_CHOICES = [
+    (ARTIFACT_MARKDOWN, 'Markdown Document'),
+    (ARTIFACT_JSON, 'JSON Spec'),
+    (ARTIFACT_YAML, 'YAML Config'),
+    (ARTIFACT_TEXT, 'Plain Text'),
+]
+
+# Quality Metric Names
+METRIC_COMPLETENESS = 'COMPLETENESS'
+METRIC_READABILITY = 'READABILITY'
+METRIC_FEASIBILITY = 'FEASIBILITY'
+METRIC_SECURITY = 'SECURITY'
+
+METRIC_CHOICES = [
+    (METRIC_COMPLETENESS, 'Completeness & Detail'),
+    (METRIC_READABILITY, 'Clarity & Readability'),
+    (METRIC_FEASIBILITY, 'Technical Feasibility'),
+    (METRIC_SECURITY, 'Security Compliance'),
+]
+
+# Evaluation Statuses
+EVAL_STATUS_PASSED = 'PASSED'
+EVAL_STATUS_FAILED = 'FAILED'
+EVAL_STATUS_FLAGGED = 'FLAGGED'
+
+EVAL_STATUS_CHOICES = [
+    (EVAL_STATUS_PASSED, 'Passed Validation'),
+    (EVAL_STATUS_FAILED, 'Failed Validation'),
+    (EVAL_STATUS_FLAGGED, 'Flagged for Review'),
+]
+
+# Export Formats
+EXPORT_FORMAT_MARKDOWN = 'MARKDOWN'
+EXPORT_FORMAT_PDF = 'PDF'
+EXPORT_FORMAT_JSON = 'JSON'
+
+EXPORT_FORMAT_CHOICES = [
+    (EXPORT_FORMAT_MARKDOWN, 'Markdown Blueprint'),
+    (EXPORT_FORMAT_PDF, 'PDF Report'),
+    (EXPORT_FORMAT_JSON, 'Structured JSON'),
+]

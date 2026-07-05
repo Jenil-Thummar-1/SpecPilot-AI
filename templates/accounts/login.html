@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - SpecPilot AI{% endblock %}
+
+{% block auth_content %}
+<div class="container min-vh-100 d-flex align-items-center justify-content-center" style="background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 60%);">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-5">
+            <div class="glass-panel border-0 text-center">
+                <a href="/" class="d-inline-flex align-items-center gap-2 mb-4 text-decoration-none fs-3 fw-bold text-white" style="font-family: var(--font-family-display);">
+                    <i class="bi bi-airplane-engines-fill text-primary"></i>
+                    <span>SpecPilot <span style="background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI</span></span>
+                </a>
+                
+                <h4 class="text-white mb-3 fw-bold">Welcome Back</h4>
+                <p class="text-secondary small mb-4">Enter credentials to open your development architect workspace.</p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3 text-start">
+                        <label class="form-label text-secondary small fw-semibold">Username</label>
+                        <input type="text" name="username" class="form-control form-control-custom" placeholder="developer" required>
+                    </div>
+                    <div class="mb-4 text-start">
+                        <label class="form-label text-secondary small fw-semibold">Password</label>
+                        <input type="password" name="password" class="form-control form-control-custom" placeholder="••••••••" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3 fw-bold">Sign In to Workspace</button>
+                </form>
+                
+                <p class="text-secondary small mb-0">Don't have a workspace? <a href="{% url 'register' %}" class="text-primary fw-semibold">Create account</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

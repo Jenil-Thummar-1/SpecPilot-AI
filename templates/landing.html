@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SpecPilot AI - AI Project Architect & Software Planning Agent{% endblock %}
+
+{% block landing_content %}
+<div class="container-fluid min-vh-100 p-0 d-flex flex-column justify-content-between" style="background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);">
+    
+    <!-- Header -->
+    <header class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom" style="border-color: rgba(255,255,255,0.05);">
+        <a href="/" class="d-flex align-items-center gap-2 text-decoration-none fs-4 fw-bold text-white" style="font-family: var(--font-family-display);">
+            <i class="bi bi-airplane-engines-fill text-primary"></i>
+            <span>SpecPilot <span style="background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI</span></span>
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{% url 'login' %}" class="btn btn-outline-secondary border-0 fw-semibold text-secondary hover-text-white">Sign In</a>
+            <a href="{% url 'register' %}" class="btn btn-primary-custom">Get Started</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="container my-auto py-5 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <span class="badge rounded-pill mb-4 px-3 py-2 border border-primary text-primary" style="background: var(--primary-glow); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">ENTERPRISE AI ARCHITECT AGENT</span>
+                <h1 class="display-3 fw-extrabold mb-4" style="font-family: var(--font-family-display); background: linear-gradient(135deg, #ffffff 30%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.15;">
+                    Transform Software Ideas into Production blueprints
+                </h1>
+                <p class="lead text-secondary mb-5 mx-auto" style="max-width: 750px; font-size: 1.2rem; line-height: 1.6;">
+                    Not a chatbot. SpecPilot AI is a structured, multi-agent project planner that executes a complete 14-step lifecycle—generating requirements, system architectures, database designs, API specifications, and roadmap templates.
+                </p>
+                <div class="d-flex align-items-center justify-content-center gap-3">
+                    <a href="{% url 'register' %}" class="btn btn-lg btn-primary-custom px-4 py-3">
+                        Launch Architect Agent <i class="bi bi-arrow-right-short ms-2"></i>
+                    </a>
+                    <a href="#how-it-works" class="btn btn-lg btn-outline-secondary glass-card border-0 px-4 py-3 text-secondary">
+                        See Lifecycle Roadmap
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key value feature blocks -->
+    <section class="container my-5">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="glass-panel text-center h-100 p-4 border-0" style="background: rgba(255,255,255,0.015);">
+                    <div class="rounded-circle bg-primary-glow p-3 d-inline-flex mb-4">
+                        <i class="bi bi-diagram-3-fill fs-3 text-primary"></i>
+                    </div>
+                    <h4 class="mb-3">Clean Architecture</h4>
+                    <p class="text-secondary small mb-0">Decouples core business processes into modular service operations, built to align with SOLID enterprise patterns.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-panel text-center h-100 p-4 border-0" style="background: rgba(255,255,255,0.015);">
+                    <div class="rounded-circle bg-accent-glow p-3 d-inline-flex mb-4">
+                        <i class="bi bi-database-fill-gear fs-3 text-accent"></i>
+                    </div>
+                    <h4 class="mb-3">Context & Memory</h4>
+                    <p class="text-secondary small mb-0">Maintains short-term user execution parameters alongside long-term roadmap archives to enforce formatting rules.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-panel text-center h-100 p-4 border-0" style="background: rgba(255,255,255,0.015);">
+                    <div class="rounded-circle bg-primary-glow p-3 d-inline-flex mb-4" style="background: rgba(16, 185, 129, 0.1);">
+                        <i class="bi bi-shield-lock-fill fs-3 text-success"></i>
+                    </div>
+                    <h4 class="mb-3">Safety & Validation</h4>
+                    <p class="text-secondary small mb-0">Heuristic guards check AI output formats and enforce safety filters before rendering files for users.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 border-top" style="border-color: rgba(255,255,255,0.05);">
+        <p class="small text-secondary mb-0">© 2026 SpecPilot AI. Designed and Engineered with Django 5 & Gemini API.</p>
+    </footer>
+</div>
+{% endblock %}

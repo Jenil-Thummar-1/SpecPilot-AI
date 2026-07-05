@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects - SpecPilot AI{% endblock %}
+{% block page_title %}Projects Library{% endblock %}
+
+{% block content %}
+<div class="glass-card p-4 border-0">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h5 class="mb-0 fw-bold">All Workspace Projects</h5>
+        <a href="{% url 'project_create' %}" class="btn btn-primary-custom">
+            <i class="bi bi-plus-circle me-1"></i> New Project
+        </a>
+    </div>
+    
+    {% if projects %}
+        <div class="row g-4">
+            {% for project in projects %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.015);">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="badge bg-primary-glow text-primary" style="font-size: 0.75rem;">{{ project.get_target_architecture_display }}</span>
+                                <span class="badge {% if project.status == 'COMPLETE' %}bg-success{% elif project.status == 'PLANNING' %}bg-warning{% else %}bg-secondary{% endif %}-glow text-white">{{ project.get_status_display }}</span>
+                            </div>
+                            <h5 class="text-white fw-bold mb-2">{{ project.title }}</h5>
+                            <p class="text-secondary small mb-4">{{ project.description|truncatewords:20 }}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3" style="font-size: 0.8rem;">
+                                <span class="text-muted">Progress</span>
+                                <span class="fw-bold text-white">{{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%</span>
+                            </div>
+                            <div class="progress mb-4" style="height: 6px; background: var(--card-border);">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ project.plan.overall_progress_pct|default:0 }}%"></div>
+                            </div>
+                            <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-secondary border-0 w-100 glass-card">
+                                Open Workspace <i class="bi bi-arrow-right-short ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-folder-plus text-muted fs-1 mb-3 block"></i>
+            <p class="text-secondary">No projects created yet. Start by adding a project.</p>
+            <a href="{% url 'project_create' %}" class="btn btn-primary-custom mt-2">Create First Project</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

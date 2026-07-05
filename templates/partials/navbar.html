@@ -1,0 +1,24 @@
+<nav class="navbar navbar-custom">
+    <div class="d-flex align-items-center gap-3">
+        <!-- Sidebar toggler for smaller screens -->
+        <button class="btn btn-outline-secondary border-0 d-lg-none" id="sidebar-toggler" type="button">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+        <h4 class="mb-0 text-capitalize fw-bold" style="font-family: var(--font-family-display);">
+            {% block page_title %}SpecPilot Workspace{% endblock %}
+        </h4>
+    </div>
+    
+    <div class="d-flex align-items-center gap-3">
+        <!-- Theme Switcher Toggler Button -->
+        <button class="btn btn-outline-secondary border-0 p-2 d-flex align-items-center justify-content-center" id="theme-toggler" type="button" title="Toggle Light/Dark Theme">
+            <i class="bi bi-sun-fill fs-5"></i>
+        </button>
+        
+        <!-- Status indicator widget -->
+        <div class="d-none d-md-flex align-items-center gap-2 glass-card px-3 py-1 border-0" style="background: rgba(255,255,255,0.03);">
+            <i class="bi bi-cloud-check-fill text-success"></i>
+            <span class="small text-secondary fw-semibold">API Connection Operational</span>
+        </div>
+    </div>
+</nav>

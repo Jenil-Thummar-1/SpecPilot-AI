@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SpecPilot AI - AI Software Architect{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Notification Engine -->
+    <div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1080;">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast-alert glass-card p-3 mb-2 d-flex align-items-center gap-3 border-start border-4 {% if message.tags == 'success' %}border-success{% elif message.tags == 'error' %}border-danger{% else %}border-info{% endif %}" style="min-width: 300px; transition: all 0.3s ease;">
+                    {% if message.tags == 'success' %}
+                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                    {% elif message.tags == 'error' %}
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+                    {% else %}
+                        <i class="bi bi-info-circle-fill text-info fs-4"></i>
+                    {% endif %}
+                    <div>
+                        <div class="fw-bold text-capitalize">{{ message.tags }}</div>
+                        <div class="small text-secondary">{{ message }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if user.is_authenticated %}
+        <!-- Sidebar layout -->
+        {% include 'partials/sidebar.html' %}
+        
+        <!-- Navbar Layout -->
+        {% include 'partials/navbar.html' %}
+        
+        <!-- Main content frame -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    {% else %}
+        <!-- Authenticated out / Landing layout -->
+        {% block auth_content %}
+            {% block landing_content %}{% endblock %}
+        </block>
+    {% endif %}
+
+    <!-- Bootstrap 5 Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
