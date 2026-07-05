@@ -17,6 +17,7 @@ urlpatterns = [
     path('agents/', include('apps.agents.urls')),
     path('skills/', include('apps.skills.urls')),
     path('memory/', include('apps.memory.urls')),
+    path('generator/', include('apps.generator.urls')),
 ]
 
 if settings.DEBUG:

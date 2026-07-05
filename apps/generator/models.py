@@ -13,6 +13,8 @@ class GeneratedArtifact(TimeStampedModel):
     content = models.TextField(help_text="Raw output string (Markdown, JSON, SQL, or YAML text).")
     file_path = models.CharField(max_length=500, blank=True, null=True, help_text="Path to file storage location if exported.")
     version = models.IntegerField(default=1)
+    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.title} (v{self.version}) - {self.get_artifact_type_display()}"
+        return f"{self.title} (v{self.version}) - {self.get_artifact_type_display()} [Approved: {self.is_approved}]"
+
