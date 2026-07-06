@@ -1,5 +1,6 @@
 import logging
 import re
+import json
 from apps.memory.models import Conversation, Session, MemoryEntry
 from apps.projects.models import Project
 from config.constants import MEMORY_SHORT_TERM, MEMORY_LONG_TERM, MEMORY_SUMMARY
@@ -9,7 +10,19 @@ logger = logging.getLogger('specpilot.ai')
 class MemoryService:
     """
     Manages short-term and long-term AI context loading, conversation history, and summarization.
+    Enhanced with Global In-Memory Session Caching.
     """
+    _session_cache = {}
+
+    @classmethod
+    def clear_project_cache(cls, project_id):
+        """
+        Clears the in-memory context cache for a specific project.
+        """
+        cache_key = f"project_data_{project_id}"
+        if cache_key in cls._session_cache:
+            del cls._session_cache[cache_key]
+            logger.info(f"Cleared In-Memory Session Cache for project {project_id}")
 
     @staticmethod
     def get_or_create_active_session(project):
@@ -37,6 +50,9 @@ class MemoryService:
             importance_score=importance_score
         )
         logger.debug(f"Saved memory entry {entry.id} of type {memory_type} for project '{project.title}'")
+        
+        # Invalidate in-memory cache on memory mutations
+        MemoryService.clear_project_cache(project.id)
         return entry
 
     @staticmethod
@@ -100,6 +116,9 @@ class MemoryService:
         step.metadata["indexed_sections"] = indexed_sections
         step.save()
         logger.info(f"Successfully categorized & indexed {len(indexed_sections)} sections for Step '{step.title}'")
+        
+        # Invalidate in-memory cache on section updates
+        MemoryService.clear_project_cache(step.project_plan.project.id)
         return indexed_sections
 
     @staticmethod
@@ -133,11 +152,13 @@ class MemoryService:
             existing_store["facts"].append(f"Completed Phase {step.order}: {step.title}")
             project.metadata['knowledge_store'] = existing_store
             project.save()
+            
+            # Invalidate in-memory cache
+            MemoryService.clear_project_cache(project.id)
             return
 
         from apps.core.services.gemini_service import GeminiService
         from config.ai import DEFAULT_MODEL_NAME
-        import json
 
         ai_service = GeminiService(api_key=api_key, model_name=DEFAULT_MODEL_NAME)
         extraction_prompt = (
@@ -179,6 +200,9 @@ class MemoryService:
             project.metadata['knowledge_store'] = existing_store
             project.save()
             logger.info(f"Successfully updated Project Knowledge Store after approving step '{step.title}'")
+            
+            # Invalidate in-memory cache
+            MemoryService.clear_project_cache(project.id)
         except Exception as e:
             logger.error(f"Failed to extract knowledge store update: {e}")
 
@@ -227,22 +251,84 @@ class MemoryService:
             
         return ""
 
-    @staticmethod
-    def load_context(project, limit=10, current_step=None):
+    @classmethod
+    def load_context(cls, project, limit=10, current_step=None):
         """
         Loads a list of structured context document dictionaries.
         Resolves the Prompt Dependency Graph using step.dependencies_str to filter items,
         combines with Project Knowledge Store, and ranks by priority.
+        Optimized with In-Memory Session Context preloading.
         """
         from apps.generator.models import GeneratedArtifact
 
+        # 1. Fetch from In-Memory session cache if present
+        cache_key = f"project_data_{project.id}"
+        if cache_key in cls._session_cache:
+            logger.debug(f"Loading Global Context from In-Memory Session Cache for project {project.id}")
+            cached_data = cls._session_cache[cache_key]
+            
+            knowledge_store = cached_data["knowledge_store"]
+            approved_arts_data = cached_data["approved_artifacts"]
+            st_content_parts = cached_data["short_term_entries"]
+        else:
+            # Load and cache everything from database
+            logger.debug(f"Preloading and building In-Memory Session Cache for project {project.id}")
+            
+            if not isinstance(project.metadata, dict):
+                project.metadata = {}
+            knowledge_store = project.metadata.get('knowledge_store', {})
+            
+            # Fetch approved artifacts with prefetch select optimized lookups
+            approved_arts = GeneratedArtifact.objects.filter(
+                project=project,
+                is_approved=True
+            ).select_related('step').order_by('step__order')
+            
+            approved_arts_data = []
+            for art in approved_arts:
+                if not art.step:
+                    continue
+                
+                # Check for cached summary
+                summary_text = art.step.metadata.get("summary", "") if isinstance(art.step.metadata, dict) else ""
+                if not summary_text:
+                    summary_text = cls.generate_artifact_summary(art.step, art.content)
+                if not summary_text:
+                    summary_text = art.content[:800]
+                    
+                indexed_sections = art.step.metadata.get("indexed_sections", []) if isinstance(art.step.metadata, dict) else []
+                
+                approved_arts_data.append({
+                    "step_order": art.step.order,
+                    "step_title": art.step.title,
+                    "summary": summary_text,
+                    "indexed_sections": indexed_sections,
+                    "content": art.content
+                })
+                
+            # Fetch short-term chat logs
+            session = cls.get_or_create_active_session(project)
+            short_term_entries = MemoryEntry.objects.filter(
+                session=session,
+                memory_type=MEMORY_SHORT_TERM
+            ).order_by('created_at')[:limit]
+            
+            st_content_parts = []
+            for entry in short_term_entries:
+                role_display = "User" if entry.role == "USER" else "Agent"
+                st_content_parts.append(f"{role_display}: {entry.content}")
+                
+            # Cache the data structure
+            cls._session_cache[cache_key] = {
+                "knowledge_store": knowledge_store,
+                "approved_artifacts": approved_arts_data,
+                "short_term_entries": st_content_parts
+            }
+
+        # 2. Build current step dependencies context list
         context_list = []
 
-        # 1. Load the Structured Project Knowledge Store (Priority 8)
-        if not isinstance(project.metadata, dict):
-            project.metadata = {}
-        
-        knowledge_store = project.metadata.get('knowledge_store', {})
+        # Load Structured Project Knowledge Store (Priority 8)
         if knowledge_store:
             store_parts = []
             for category, items in knowledge_store.items():
@@ -259,18 +345,13 @@ class MemoryService:
                     "reason": "Structured project decisions and definitions"
                 })
 
-        # 2. Resolve Prompt Dependency Graph using step.dependencies_str
+        # Resolve Prompt Dependency Graph using step.dependencies_str
         deps_orders = []
         if current_step and current_step.dependencies_str:
             try:
                 deps_orders = [int(x.strip()) for x in current_step.dependencies_str.split(',') if x.strip()]
             except ValueError:
                 pass
-
-        approved_arts = GeneratedArtifact.objects.filter(
-            project=project,
-            is_approved=True
-        ).order_by('step__order')
 
         # Map current step type to relevant section category indexing
         target_section_category = "GENERAL"
@@ -289,63 +370,34 @@ class MemoryService:
             elif "arch" in step_slug.lower():
                 target_section_category = "ARCH"
 
-        # Load dependency artifacts
-        for art in approved_arts:
-            step = art.step
-            if not step:
-                continue
-
-            is_direct_dependency = step.order in deps_orders
+        for art_data in approved_arts_data:
+            step_order = art_data["step_order"]
+            is_direct_dependency = step_order in deps_orders
             
-            # Rank priority: Direct dependencies = 10, Indirect = 4
+            # Rank priority
             priority = 10 if is_direct_dependency else 4
-            reason = f"Direct Dependency (Phase {step.order})" if is_direct_dependency else f"Indirect Phase {step.order} context"
+            reason = f"Direct Dependency (Phase {step_order})" if is_direct_dependency else f"Indirect Phase {step_order} context"
 
-            # Check if we have indexed sections matching the target category (Priority booster +3)
-            if not isinstance(step.metadata, dict):
-                step.metadata = {}
-            
-            indexed_sections = step.metadata.get("indexed_sections", [])
             relevant_section_content = ""
-            if indexed_sections and target_section_category != "GENERAL":
-                matching_sections = [s for s in indexed_sections if s["category"] == target_section_category]
+            if art_data["indexed_sections"] and target_section_category != "GENERAL":
+                matching_sections = [s for s in art_data["indexed_sections"] if s["category"] == target_section_category]
                 if matching_sections:
                     relevant_section_content = "\n\n".join(f"### {s['title']}\n{s['content']}" for s in matching_sections)
-                    priority += 3  # Boost priority for highly relevant sections!
+                    priority += 3
                     reason += f" (Indexed {target_section_category} relevance boost)"
 
-            # Get summary of artifact
-            summary_text = step.metadata.get("summary", "")
-            if not summary_text:
-                summary_text = MemoryService.generate_artifact_summary(step, art.content)
-            
-            if not summary_text:
-                summary_text = art.content[:800]
-
-            # Compile content: if we have highly relevant indexed sections, append them to the summary
-            final_content = summary_text
+            final_content = art_data["summary"]
             if relevant_section_content:
-                final_content = f"{summary_text}\n\n[RELEVANT {target_section_category} DETAILS]:\n{relevant_section_content}"
+                final_content = f"{art_data['summary']}\n\n[RELEVANT {target_section_category} DETAILS]:\n{relevant_section_content}"
 
             context_list.append({
-                "title": f"Phase {step.order}: {step.title}",
+                "title": f"Phase {step_order}: {art_data['step_title']}",
                 "content": final_content,
                 "priority": priority,
                 "reason": reason
             })
 
-        # 3. Load recent short-term conversation logs (Priority 3)
-        session = MemoryService.get_or_create_active_session(project)
-        short_term_entries = MemoryEntry.objects.filter(
-            session=session,
-            memory_type=MEMORY_SHORT_TERM
-        ).order_by('created_at')[:limit]
-
-        st_content_parts = []
-        for entry in short_term_entries:
-            role_display = "User" if entry.role == "USER" else "Agent"
-            st_content_parts.append(f"{role_display}: {entry.content}")
-
+        # Load recent short-term conversation logs (Priority 3)
         if st_content_parts:
             context_list.append({
                 "title": "Recent Chat History",
@@ -360,7 +412,6 @@ class MemoryService:
     def retrieve_relevant_context(project, query_text, limit=3):
         """
         Retrieves the most semantically relevant memory logs based on query keywords.
-        Uses standard case-insensitive SQLite text matching as a vector DB placeholder.
         """
         logger.info(f"Retrieving memory context matching query: '{query_text}'")
         

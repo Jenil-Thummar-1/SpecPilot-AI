@@ -8,58 +8,68 @@ from django.conf import settings
 from django.core.cache import cache
 from config.ai import SAFETY_SETTINGS, DEFAULT_GENERATION_CONFIG, DEFAULT_MODEL_NAME, ADVANCED_MODEL_NAME
 from google import generativeai as genai
+from apps.core.services.profiler import PerformanceProfiler
 
 logger = logging.getLogger('specpilot.ai')
 
 class AIRequestQueue:
     """
-    Guarantees thread-safe and process-safe execution so that only one 
-    Gemini API call runs at any given time across the entire environment.
+    Guarantees thread-safe and process-safe multi-slot execution locks.
+    Allows up to 4 concurrent Gemini API requests to execute in parallel.
     """
-    _lock = threading.Lock()
-    _lock_file = os.path.join(settings.BASE_DIR, 'logs', 'ai_request.lock')
+    _max_slots = 4
+    _lock = threading.Semaphore(_max_slots)
+    _local = threading.local()
 
     @classmethod
     def acquire(cls, timeout=180):
         start_time = time.time()
         cls._lock.acquire()
         
-        # Ensure log directory exists
-        os.makedirs(os.path.dirname(cls._lock_file), exist_ok=True)
+        log_dir = os.path.join(settings.BASE_DIR, 'logs')
+        os.makedirs(log_dir, exist_ok=True)
         
         while True:
-            try:
-                # Remove stale lock if older than 3 minutes
-                if os.path.exists(cls._lock_file):
-                    mtime = os.path.getmtime(cls._lock_file)
+            for slot in range(cls._max_slots):
+                slot_file = os.path.join(log_dir, f'ai_request_{slot}.lock')
+                
+                # Clean stale lock
+                if os.path.exists(slot_file):
+                    mtime = os.path.getmtime(slot_file)
                     if time.time() - mtime > 180:
-                        logger.warning("Stale AI lock file detected. Forcing cleanup.")
                         try:
-                            os.remove(cls._lock_file)
+                            os.remove(slot_file)
                         except Exception:
                             pass
                 
-                # Exclusively create the lock file
-                fd = os.open(cls._lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                os.write(fd, f"{time.time()}:{os.getpid()}".encode())
-                os.close(fd)
-                return True
-            except FileExistsError:
-                if time.time() - start_time > timeout:
-                    cls._lock.release()
-                    raise TimeoutError("Timed out waiting for AI execution queue lock.")
-                time.sleep(0.5)
+                try:
+                    fd = os.open(slot_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                    os.write(fd, f"{time.time()}:{os.getpid()}".encode())
+                    os.close(fd)
+                    
+                    cls._local.acquired_slot = slot
+                    return True
+                except FileExistsError:
+                    continue
+            
+            if time.time() - start_time > timeout:
+                cls._lock.release()
+                raise TimeoutError("Timed out waiting for AI execution queue slot.")
+            time.sleep(0.1)
 
     @classmethod
     def release(cls):
-        try:
-            if os.path.exists(cls._lock_file):
-                os.remove(cls._lock_file)
-        except Exception as e:
-            logger.debug(f"Error removing lock file: {e}")
-        finally:
-            if cls._lock.locked():
-                cls._lock.release()
+        slot = getattr(cls._local, 'acquired_slot', None)
+        if slot is not None:
+            log_dir = os.path.join(settings.BASE_DIR, 'logs')
+            slot_file = os.path.join(log_dir, f'ai_request_{slot}.lock')
+            try:
+                if os.path.exists(slot_file):
+                    os.remove(slot_file)
+            except Exception:
+                pass
+            cls._local.acquired_slot = None
+        cls._lock.release()
 
 
 class AIRateLimiter:
@@ -69,8 +79,8 @@ class AIRateLimiter:
     """
     @staticmethod
     def wait_if_needed(estimated_tokens=0):
-        max_rpm = getattr(settings, 'GEMINI_MAX_RPM', 10)  # Free Tier max RPM is 15
-        max_tpm = getattr(settings, 'GEMINI_MAX_TPM', 30000) # Free Tier max TPM is 1,000,000; we default to a safe 30,000 budget
+        max_rpm = getattr(settings, 'GEMINI_MAX_RPM', 15)  # Free Tier max RPM is 15
+        max_tpm = getattr(settings, 'GEMINI_MAX_TPM', 60000) # Increased budget for parallel demo mode
         
         from apps.agents.models import AgentExecution
         from django.utils import timezone
@@ -79,7 +89,6 @@ class AIRateLimiter:
         now = timezone.now()
         one_minute_ago = now - datetime.timedelta(seconds=60)
         
-        # Count executions in the last minute
         recent_execs = AgentExecution.objects.filter(
             created_at__gte=one_minute_ago
         ).order_by('created_at')
@@ -165,6 +174,7 @@ class GeminiService:
     Service layer client wrapper for the Google Gemini API.
     Handles configuration, validation, metrics tracking, caching, queueing, and retry loops.
     """
+    _model_cache = {}
 
     def __init__(self, api_key=None, model_name=None):
         self.api_key = api_key or getattr(settings, 'GEMINI_API_KEY', '')
@@ -175,7 +185,23 @@ class GeminiService:
         else:
             logger.warning("GeminiService initialized without a valid GEMINI_API_KEY. Using fallback mockup mode.")
 
-    def generate_text(self, prompt, system_instruction=None, temperature=0.2):
+    def _get_model(self, system_instruction, temperature):
+        """
+        Reuses instantiated GenerativeModel configurations to save HTTP handshake overhead.
+        """
+        cache_key = f"{self.model_name}:{system_instruction or ''}:{temperature}"
+        if cache_key not in self._model_cache:
+            config = DEFAULT_GENERATION_CONFIG.copy()
+            config["temperature"] = temperature
+            self._model_cache[cache_key] = genai.GenerativeModel(
+                model_name=self.model_name,
+                generation_config=config,
+                safety_settings=SAFETY_SETTINGS,
+                system_instruction=system_instruction
+            )
+        return self._model_cache[cache_key]
+
+    def generate_text(self, prompt, system_instruction=None, temperature=0.2, step_id=999):
         """
         Sends a generation request to the Gemini API with pre-flight budgeting,
         centralized locks, rate limiting, and response caching.
@@ -234,9 +260,49 @@ class GeminiService:
             }
             return result
 
-        # 3. Centralized Queue & Rate Limiter block
+        # 3. Unified AI Routing fallbacks
+        from apps.core.services.router import AIProviderRouter, GeminiKeyRotator
+        keys = GeminiKeyRotator._initialize_keys()
+        
+        # Check if other providers are configured (OpenAI, Claude, etc.)
+        other_configured = any(getattr(settings, f"{p}_API_KEY", "") for p in ["OPENAI", "CLAUDE", "OPENROUTER", "GROQ"])
+        
+        if (keys or other_configured) and self.api_key != "dummy-api-key-for-now":
+            logger.info("Routing request through Enterprise AI Provider Router...")
+            try:
+                with PerformanceProfiler(step_id, "AI Provider Routing"):
+                    res = AIProviderRouter.route_request(
+                        system_instruction=system_instruction,
+                        prompt=prompt,
+                        temperature=temperature
+                    )
+                
+                elapsed_time_ms = int((time.time() - start_time) * 1000)
+                text_out = res["text"]
+                
+                response_data = {
+                    "text": text_out,
+                    "input_tokens": estimated_tokens,
+                    "output_tokens": len(text_out) // 4,
+                    "elapsed_time_ms": elapsed_time_ms,
+                    "retry_count": 0,
+                    "quota_status": "OK",
+                    "success": True,
+                    "cache_hit": False,
+                    "fingerprint": prompt_fingerprint,
+                    "provider": res["provider"],
+                    "model": res["model"]
+                }
+                if cache_key:
+                    cache.set(cache_key, response_data, 86400)
+                return response_data
+            except Exception as routing_err:
+                logger.error(f"AI Provider Routing failed: {routing_err}. Attempting recovery in standard client...")
+
+        # 4. Centralized Queue & Rate Limiter fallback block
         logger.info("Waiting for AI Request Queue lock...")
-        AIRequestQueue.acquire()
+        with PerformanceProfiler(step_id, "Wait for Concurrency Lock"):
+            AIRequestQueue.acquire()
         
         max_retries = getattr(settings, 'GEMINI_MAX_RETRIES', 5)
         retry_attempts = 0
@@ -251,24 +317,14 @@ class GeminiService:
                 try:
                     logger.info(f"Initiating Gemini request using model: {self.model_name} (Attempt {attempt + 1})")
                     
-                    config = DEFAULT_GENERATION_CONFIG.copy()
-                    config["temperature"] = temperature
-
-                    model = genai.GenerativeModel(
-                        model_name=self.model_name,
-                        generation_config=config,
-                        safety_settings=SAFETY_SETTINGS,
-                        system_instruction=system_instruction
-                    )
-
-                    response = model.generate_content(prompt)
-                    
-                    # Verify text is extracted successfully
-                    extracted_text = response.text
+                    with PerformanceProfiler(step_id, "Gemini Generation"):
+                        model = self._get_model(system_instruction, temperature)
+                        response = model.generate_content(prompt)
+                        extracted_text = response.text
                     
                     elapsed_time_ms = int((time.time() - start_time) * 1000)
                     logger.info(f"Gemini request completed in {elapsed_time_ms}ms")
-
+ 
                     # Calculate tokens
                     input_tokens = 0
                     output_tokens = 0
@@ -278,7 +334,7 @@ class GeminiService:
                     except Exception:
                         input_tokens = estimated_tokens
                         output_tokens = len(extracted_text) // 4
-
+ 
                     response_data = {
                         "text": extracted_text,
                         "input_tokens": input_tokens,
@@ -288,7 +344,9 @@ class GeminiService:
                         "quota_status": final_quota_status,
                         "success": True,
                         "cache_hit": False,
-                        "fingerprint": prompt_fingerprint
+                        "fingerprint": prompt_fingerprint,
+                        "provider": "Gemini",
+                        "model": self.model_name
                     }
                     
                     # Cache result
@@ -296,7 +354,7 @@ class GeminiService:
                         cache.set(cache_key, response_data, 86400)
                         
                     break
-
+ 
                 except Exception as e:
                     if is_retryable_exception(e) and attempt < max_retries:
                         retry_attempts += 1
@@ -311,22 +369,19 @@ class GeminiService:
                     else:
                         final_quota_status = "EXCEEDED" if ("429" in str(e) or "quota" in str(e).lower()) else "ERROR"
                         raise e
-
         except Exception as primary_err:
-            # Fallback to DEFAULT_MODEL_NAME if ADVANCED_MODEL_NAME fails
             if self.model_name != DEFAULT_MODEL_NAME:
                 logger.warning(f"Primary model {self.model_name} failed: {str(primary_err)}. Trying fallback {DEFAULT_MODEL_NAME}.")
                 try:
-                    config = DEFAULT_GENERATION_CONFIG.copy()
-                    config["temperature"] = temperature
-                    fallback_model = genai.GenerativeModel(
-                        model_name=DEFAULT_MODEL_NAME,
-                        generation_config=config,
-                        safety_settings=SAFETY_SETTINGS,
-                        system_instruction=system_instruction
-                    )
-                    response = fallback_model.generate_content(prompt)
-                    elapsed_time_ms = int((time.time() - start_time) * 1000)
+                    with PerformanceProfiler(step_id, "Gemini Fallback Generation"):
+                        fallback_model = genai.GenerativeModel(
+                            model_name=DEFAULT_MODEL_NAME,
+                            generation_config=DEFAULT_GENERATION_CONFIG,
+                            safety_settings=SAFETY_SETTINGS,
+                            system_instruction=system_instruction
+                        )
+                        response = fallback_model.generate_content(prompt)
+                        elapsed_time_ms = int((time.time() - start_time) * 1000)
                     
                     try:
                         input_tokens = fallback_model.count_tokens(prompt).total_tokens

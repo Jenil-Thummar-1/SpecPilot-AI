@@ -352,178 +352,188 @@ class ProjectStepExecuteAJAXView(LoginRequiredMixin, View):
     and returns metrics to the autonomous UI.
     """
     def post(self, request, project_id, step_id):
-        project = get_object_or_404(Project, id=project_id, user=request.user)
-        step = get_object_or_404(PlanStep, id=step_id, project_plan__project=project)
-        
-        try:
-            from apps.agents.services import AgentOrchestratorService
+        from django.db import transaction
+        with transaction.atomic():
+            project = get_object_or_404(Project.objects.select_related('plan'), id=project_id, user=request.user)
+            step = get_object_or_404(PlanStep.objects.select_related('project_plan__project'), id=step_id, project_plan__project=project)
             
-            # Read force_regen from post body
-            import json
-            force_regen = False
-            if request.body:
-                try:
-                    body = json.loads(request.body)
-                    force_regen = body.get('force_regen', False)
-                except Exception:
-                    pass
-            
-            # Skip regeneration check:
-            # If force_regen is False and step is already COMPLETED and has an approved artifact, skip!
-            artifact = step.generated_artifacts.order_by('-version').first()
-            if not force_regen and step.status == 'COMPLETED' and artifact and artifact.is_approved:
-                # Find quality scores
-                eval_record = project.agent_executions.filter(status='SUCCEEDED').last().evaluations.last() if project.agent_executions.filter(status='SUCCEEDED').exists() else None
-                qa_score = 9.2
-                if eval_record:
-                    overall_score_record = eval_record.scores.filter(metric_name='OVERALL_CONFIDENCE').first()
-                    if overall_score_record:
-                        qa_score = float(overall_score_record.score)
+            try:
+                from apps.agents.services import AgentOrchestratorService
                 
-                # Fetch project level stats
-                from django.db.models import Sum
-                execs = project.agent_executions.all()
-                total_requests = execs.count()
-                total_input_tokens = execs.aggregate(Sum('input_tokens'))['input_tokens__sum'] or 0
-                total_output_tokens = execs.aggregate(Sum('output_tokens'))['output_tokens__sum'] or 0
-                total_time_ms = execs.aggregate(Sum('execution_time_ms'))['execution_time_ms__sum'] or 0
-                total_retries = execs.aggregate(Sum('retry_count'))['retry_count__sum'] or 0
+                # Read force_regen from post body
+                import json
+                force_regen = False
+                if request.body:
+                    try:
+                        body = json.loads(request.body)
+                        force_regen = body.get('force_regen', False)
+                    except Exception:
+                        pass
                 
-                return JsonResponse({
-                    "success": True,
-                    "step_id": step.id,
-                    "step_type": step.step_type,
-                    "title": step.title,
-                    "qa_score": qa_score,
-                    "version": artifact.version,
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "duration_ms": 0,
-                    "skipped": True,
-                    # stats
-                    "total_requests": total_requests,
-                    "total_input_tokens": total_input_tokens,
-                    "total_output_tokens": total_output_tokens,
-                    "total_duration_ms": total_time_ms,
-                    "total_retries": total_retries,
-                    "quota_status": "OK",
-                    "diagnostics": step.metadata.get('diagnostics', {})
-                })
-
-            # Execute step generation pipeline
-            res = AgentOrchestratorService.execute_pipeline(step.id, request.user)
-            
-            # Get latest artifact generated for this step
-            artifact = step.generated_artifacts.order_by('-version').first()
-            
-            # Auto-approve the artifact so it proceeds automatically
-            if artifact:
-                artifact.is_approved = True
-                artifact.save()
-                
-                # Fetch quality scores for validation details
-                eval_record = artifact.step.project_plan.project.agent_executions.last().evaluations.last()
-                qa_score = 0.0
-                if eval_record:
-                    overall_score_record = eval_record.scores.filter(metric_name='OVERALL_CONFIDENCE').first()
-                    if overall_score_record:
-                        qa_score = float(overall_score_record.score)
-                
-                # Set step as completed
-                PlannerService.complete_step(step, notes="Auto-approved by autonomous planning engine.")
-                
-                # Recalculate and update overall project progress
-                PlannerService.update_plan_progress(project.plan)
-                
-                # If all phases are done, mark project complete
-                incomplete_steps = project.plan.steps.exclude(status='COMPLETED')
-                if not incomplete_steps.exists() or (incomplete_steps.count() == 1 and incomplete_steps.first().step_type == 'EXPORT_PREP'):
-                    # Automatically run export prep if it exists
-                    export_prep_step = incomplete_steps.filter(step_type='EXPORT_PREP').first()
-                    if export_prep_step:
-                        # Complete mock export prep
-                        mock_content = f"# Export Compilation Package\nProject: {project.title}\nStatus: Ready for download."
-                        GeneratedArtifact.objects.create(
-                            project=project,
-                            step=export_prep_step,
-                            artifact_type='TEXT',
-                            title=export_prep_step.title,
-                            content=mock_content,
-                            version=1,
-                            is_approved=True
-                        )
-                        PlannerService.complete_step(export_prep_step, notes="Export preparation compiled successfully.")
-                        PlannerService.update_plan_progress(project.plan)
+                # Skip regeneration check:
+                # If force_regen is False and step is already COMPLETED and has an approved artifact, skip!
+                artifact = step.generated_artifacts.order_by('-version').first()
+                if not force_regen and step.status == 'COMPLETED' and artifact and artifact.is_approved:
+                    # Find quality scores
+                    eval_record = project.agent_executions.filter(status='SUCCEEDED').last().evaluations.last() if project.agent_executions.filter(status='SUCCEEDED').exists() else None
+                    qa_score = 9.2
+                    if eval_record:
+                        overall_score_record = eval_record.scores.filter(metric_name='OVERALL_CONFIDENCE').first()
+                        if overall_score_record:
+                            qa_score = float(overall_score_record.score)
                     
-                    project.status = 'COMPLETE'
-                    project.save()
+                    # Fetch project level stats
+                    from django.db.models import Sum
+                    execs = project.agent_executions.all()
+                    total_requests = execs.count()
+                    total_input_tokens = execs.aggregate(Sum('input_tokens'))['input_tokens__sum'] or 0
+                    total_output_tokens = execs.aggregate(Sum('output_tokens'))['output_tokens__sum'] or 0
+                    total_time_ms = execs.aggregate(Sum('execution_time_ms'))['execution_time_ms__sum'] or 0
+                    total_retries = execs.aggregate(Sum('retry_count'))['retry_count__sum'] or 0
+                    
+                    from apps.core.services.router import AIProviderRouter
+                    provider_status = AIProviderRouter.get_status()
+                    
+                    return JsonResponse({
+                        "success": True,
+                        "step_id": step.id,
+                        "step_type": step.step_type,
+                        "title": step.title,
+                        "qa_score": qa_score,
+                        "version": artifact.version,
+                        "input_tokens": 0,
+                        "output_tokens": 0,
+                        "duration_ms": 0,
+                        "skipped": True,
+                        # stats
+                        "total_requests": total_requests,
+                        "total_input_tokens": total_input_tokens,
+                        "total_output_tokens": total_output_tokens,
+                        "total_duration_ms": total_time_ms,
+                        "total_retries": total_retries,
+                        "quota_status": "OK",
+                        "diagnostics": step.metadata.get('diagnostics', {}),
+                        "provider_status": provider_status
+                    })
 
-                    # Trigger snapshot
-                    ProjectService.create_snapshot(project, request.user)
+                # Execute step generation pipeline
+                res = AgentOrchestratorService.execute_pipeline(step.id, request.user)
                 
-                # Get execution details for stats
-                exec_record = project.agent_executions.last()
-                input_tokens = exec_record.input_tokens if exec_record else 0
-                output_tokens = exec_record.output_tokens if exec_record else 0
-                duration_ms = exec_record.execution_time_ms if exec_record else 0
-                retry_count = exec_record.retry_count if exec_record else 0
-                quota_status = exec_record.quota_status if exec_record else "OK"
+                # Get latest artifact generated for this step
+                artifact = step.generated_artifacts.order_by('-version').first()
                 
-                # Aggregate overall stats
-                from django.db.models import Sum
-                execs = project.agent_executions.all()
-                total_requests = execs.count()
-                total_input_tokens = execs.aggregate(Sum('input_tokens'))['input_tokens__sum'] or 0
-                total_output_tokens = execs.aggregate(Sum('output_tokens'))['output_tokens__sum'] or 0
-                total_time_ms = execs.aggregate(Sum('execution_time_ms'))['execution_time_ms__sum'] or 0
-                total_retries = execs.aggregate(Sum('retry_count'))['retry_count__sum'] or 0
+                # Auto-approve the artifact so it proceeds automatically
+                if artifact:
+                    artifact.is_approved = True
+                    artifact.save()
+                    
+                    # Fetch quality scores for validation details
+                    eval_record = artifact.step.project_plan.project.agent_executions.last().evaluations.last()
+                    qa_score = 0.0
+                    if eval_record:
+                        overall_score_record = eval_record.scores.filter(metric_name='OVERALL_CONFIDENCE').first()
+                        if overall_score_record:
+                            qa_score = float(overall_score_record.score)
+                    
+                    # Set step as completed
+                    PlannerService.complete_step(step, notes="Auto-approved by autonomous planning engine.")
+                    
+                    # Recalculate and update overall project progress
+                    PlannerService.update_plan_progress(project.plan)
+                    
+                    # If all phases are done, mark project complete
+                    incomplete_steps = project.plan.steps.exclude(status='COMPLETED')
+                    if not incomplete_steps.exists() or (incomplete_steps.count() == 1 and incomplete_steps.first().step_type == 'EXPORT_PREP'):
+                        # Automatically run export prep if it exists
+                        export_prep_step = incomplete_steps.filter(step_type='EXPORT_PREP').first()
+                        if export_prep_step:
+                            # Complete mock export prep
+                            mock_content = f"# Export Compilation Package\nProject: {project.title}\nStatus: Ready for download."
+                            GeneratedArtifact.objects.create(
+                                project=project,
+                                step=export_prep_step,
+                                artifact_type='TEXT',
+                                title=export_prep_step.title,
+                                content=mock_content,
+                                version=1,
+                                is_approved=True
+                            )
+                            PlannerService.complete_step(export_prep_step, notes="Export preparation compiled successfully.")
+                            PlannerService.update_plan_progress(project.plan)
+                        
+                        project.status = 'COMPLETE'
+                        project.save()
+
+                        # Trigger snapshot
+                        ProjectService.create_snapshot(project, request.user)
+                    
+                    # Get execution details for stats
+                    exec_record = project.agent_executions.last()
+                    input_tokens = exec_record.input_tokens if exec_record else 0
+                    output_tokens = exec_record.output_tokens if exec_record else 0
+                    duration_ms = exec_record.execution_time_ms if exec_record else 0
+                    retry_count = exec_record.retry_count if exec_record else 0
+                    quota_status = exec_record.quota_status if exec_record else "OK"
+                    
+                    # Aggregate overall stats
+                    from django.db.models import Sum
+                    execs = project.agent_executions.all()
+                    total_requests = execs.count()
+                    total_input_tokens = execs.aggregate(Sum('input_tokens'))['input_tokens__sum'] or 0
+                    total_output_tokens = execs.aggregate(Sum('output_tokens'))['output_tokens__sum'] or 0
+                    total_time_ms = execs.aggregate(Sum('execution_time_ms'))['execution_time_ms__sum'] or 0
+                    total_retries = execs.aggregate(Sum('retry_count'))['retry_count__sum'] or 0
+                    
+                    from apps.core.services.router import AIProviderRouter
+                    provider_status = AIProviderRouter.get_status()
+
+                    return JsonResponse({
+                        "success": True,
+                        "step_id": step.id,
+                        "step_type": step.step_type,
+                        "title": step.title,
+                        "qa_score": qa_score,
+                        "version": artifact.version,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                        "duration_ms": duration_ms,
+                        "retry_count": retry_count,
+                        "quota_status": quota_status,
+                        # stats
+                        "total_requests": total_requests,
+                        "total_input_tokens": total_input_tokens,
+                        "total_output_tokens": total_output_tokens,
+                        "total_duration_ms": total_time_ms,
+                        "total_retries": total_retries,
+                        "diagnostics": step.metadata.get('diagnostics', {}),
+                        "provider_status": provider_status
+                    })
+                else:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "No artifact generated by the AI agent."
+                    }, status=500)
+                    
+            except Exception as ex:
+                logger.error(f"Autonomous execution failed for step {step.title}: {str(ex)}")
                 
-                return JsonResponse({
-                    "success": True,
-                    "step_id": step.id,
-                    "step_type": step.step_type,
-                    "title": step.title,
-                    "qa_score": qa_score,
-                    "version": artifact.version,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "duration_ms": duration_ms,
-                    "retry_count": retry_count,
-                    "quota_status": quota_status,
-                    # stats
-                    "total_requests": total_requests,
-                    "total_input_tokens": total_input_tokens,
-                    "total_output_tokens": total_output_tokens,
-                    "total_duration_ms": total_time_ms,
-                    "total_retries": total_retries,
-                    "diagnostics": step.metadata.get('diagnostics', {})
-                })
-            else:
+                # Friendly error mapping
+                friendly_err = str(ex)
+                if "429" in friendly_err or "quota" in friendly_err.lower() or "limit exceeded" in friendly_err.lower():
+                    friendly_err = "Google API Free Tier quota limit exceeded. SpecPilot AI will pause to cool down and try again shortly."
+                elif "500" in friendly_err or "502" in friendly_err or "503" in friendly_err:
+                    friendly_err = "Google API service is temporarily unavailable. We are retrying and waiting for recovery..."
+                elif "timeout" in friendly_err.lower() or "deadline" in friendly_err.lower():
+                    friendly_err = "API request timed out due to large generation length. Retrying shortly."
+
+                # Mark step as NEEDS_REVISION
+                PlannerService.needs_revision_step(step, reason=friendly_err)
                 return JsonResponse({
                     "success": False,
-                    "error": "No artifact generated by the AI agent."
+                    "error": friendly_err,
+                    "step_id": step.id,
+                    "title": step.title
                 }, status=500)
-                
-        except Exception as ex:
-            logger.error(f"Autonomous execution failed for step {step.title}: {str(ex)}")
-            
-            # Friendly error mapping
-            friendly_err = str(ex)
-            if "429" in friendly_err or "quota" in friendly_err.lower() or "limit exceeded" in friendly_err.lower():
-                friendly_err = "Google API Free Tier quota limit exceeded. SpecPilot AI will pause to cool down and try again shortly."
-            elif "500" in friendly_err or "502" in friendly_err or "503" in friendly_err:
-                friendly_err = "Google API service is temporarily unavailable. We are retrying and waiting for recovery..."
-            elif "timeout" in friendly_err.lower() or "deadline" in friendly_err.lower():
-                friendly_err = "API request timed out due to large generation length. Retrying shortly."
-
-            # Mark step as NEEDS_REVISION
-            PlannerService.needs_revision_step(step, reason=friendly_err)
-            return JsonResponse({
-                "success": False,
-                "error": friendly_err,
-                "step_id": step.id,
-                "title": step.title
-            }, status=500)
 
 
 @login_required

@@ -432,22 +432,26 @@ class AgentOrchestratorService:
             status='RUNNING'
         )
 
+        from apps.core.services.profiler import PerformanceProfiler, BottleneckAnalyzer
+
         try:
             # 5. Load memory logs context (passing current step reference!)
-            memory_context = MemoryService.load_context(project, current_step=step)
+            with PerformanceProfiler(step.id, "Context Loading"):
+                memory_context = MemoryService.load_context(project, current_step=step)
 
             # 6. Format prompt template values
-            if step.step_type == STEP_REQUIREMENTS:
-                prompt = PromptBuilder.build_prompt(
-                    template,
-                    idea=project.description,
-                    architecture=project.get_target_architecture_display()
-                )
-            else:
-                prompt = PromptBuilder.build_prompt(
-                    template,
-                    context_doc=memory_context
-                )
+            with PerformanceProfiler(step.id, "Prompt Building"):
+                if step.step_type == STEP_REQUIREMENTS:
+                    prompt = PromptBuilder.build_prompt(
+                        template,
+                        idea=project.description,
+                        architecture=project.get_target_architecture_display()
+                    )
+                else:
+                    prompt = PromptBuilder.build_prompt(
+                        template,
+                        context_doc=memory_context
+                    )
 
             # 7. Collect skills assigned to the agent
             skills = agent.skills.all()
@@ -498,7 +502,8 @@ class AgentOrchestratorService:
                 response = ai_service.generate_text(
                     prompt=prompt,
                     system_instruction=system_prompt,
-                    temperature=agent.temperature
+                    temperature=agent.temperature,
+                    step_id=step.id
                 )
 
             if not response.get("success", False):
@@ -507,37 +512,43 @@ class AgentOrchestratorService:
             generated_text = response["text"]
             elapsed_time_ms = response.get("elapsed_time_ms", int((time.time() - start_time) * 1000))
 
-            # 10. Versioning control on new artifact creations
-            latest_art = GeneratedArtifact.objects.filter(project=project, step=step).order_by('-version').first()
-            next_ver = (latest_art.version + 1) if latest_art else 1
+            with PerformanceProfiler(step.id, "Database Saving"):
+                # 10. Versioning control on new artifact creations
+                latest_art = GeneratedArtifact.objects.filter(project=project, step=step).order_by('-version').first()
+                next_ver = (latest_art.version + 1) if latest_art else 1
 
-            # Save generated artifact (is_approved defaults to False, prompting user review workflow)
-            artifact = GeneratedArtifact.objects.create(
-                project=project,
-                step=step,
-                artifact_type='MARKDOWN',
-                title=step.title,
-                content=generated_text,
-                version=next_ver,
-                is_approved=False
-            )
+                # Save generated artifact (is_approved defaults to False, prompting user review workflow)
+                artifact = GeneratedArtifact.objects.create(
+                    project=project,
+                    step=step,
+                    artifact_type='MARKDOWN',
+                    title=step.title,
+                    content=generated_text,
+                    version=next_ver,
+                    is_approved=False
+                )
 
-            # Immediately index generated artifact section categories
-            MemoryService.index_document_sections(step, generated_text)
+                # Immediately index generated artifact section categories
+                MemoryService.index_document_sections(step, generated_text)
 
-            # Save output back into Short-Term memory logs
-            MemoryService.save_memory(
-                project=project,
-                role="AGENT",
-                content=f"Generated Output for Phase {step.title}:\n{generated_text}",
-                memory_type=MEMORY_SHORT_TERM
-            )
+                # Save output back into Short-Term memory logs
+                MemoryService.save_memory(
+                    project=project,
+                    role="AGENT",
+                    content=f"Generated Output for Phase {step.title}:\n{generated_text}",
+                    memory_type=MEMORY_SHORT_TERM
+                )
 
             # Perform quality check audits
             EvaluationService.evaluate_artifact(execution, generated_text, step.title)
 
             # Fetch Prompt Analysis Report and save in step metadata
             report = PromptBuilder.get_last_report()
+            
+            # Bottleneck analysis
+            bottleneck_analysis = BottleneckAnalyzer.analyze(step.id)
+            PerformanceProfiler.clear_records(step.id)
+
             if not isinstance(step.metadata, dict):
                 step.metadata = {}
             step.metadata['diagnostics'] = {
@@ -548,7 +559,10 @@ class AgentOrchestratorService:
                 "retry_count": response.get("retry_count", 0),
                 "quota_status": response.get("quota_status", "OK"),
                 "input_tokens": response.get("input_tokens", 0),
-                "output_tokens": response.get("output_tokens", 0)
+                "output_tokens": response.get("output_tokens", 0),
+                "profiler": bottleneck_analysis,
+                "provider": response.get("provider", "Gemini"),
+                "model": response.get("model", "gemini-2.5-pro")
             }
             step.save()
 

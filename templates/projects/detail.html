@@ -254,6 +254,30 @@
                     </details>
                     {% endif %}
                     {% if user.is_staff or user.is_superuser %}
+                    <!-- Collapsible Enterprise AI Provider Dashboard -->
+                    <details class="mt-2 pt-2.5 border-top" style="border-color: rgba(255,255,255,0.06) !important;" id="providerDashboardDetails">
+                        <summary class="text-white fw-bold d-flex align-items-center justify-content-between" style="font-size: 0.72rem; cursor: pointer; user-select: none;">
+                            <span><i class="bi bi-diagram-3-fill text-info me-1"></i> AI Provider Dashboard</span>
+                            <i class="bi bi-chevron-down text-muted" style="font-size: 0.65rem;"></i>
+                        </summary>
+                        <div class="row g-2 mt-2 text-start" style="font-size: 0.7rem; color: rgba(255,255,255,0.75);">
+                            <div class="col-6">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Active Provider</span>
+                                <span class="fw-bold text-accent" id="providerActiveName">Gemini</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Active Model</span>
+                                <span class="fw-bold text-white font-monospace" style="font-size: 0.65rem;" id="providerActiveModel">gemini-2.5-pro</span>
+                            </div>
+                            <div class="col-12">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Failover / Rotation Log</span>
+                                <div class="p-2 rounded font-monospace" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); font-size: 0.62rem; max-height: 80px; overflow-y: auto;" id="providerFailoverLog">
+                                    No failover events logged
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    {% endif %}
                     <!-- Collapsible Developer Diagnostics Panel -->
                     <details class="mt-2 pt-2.5 border-top" style="border-color: rgba(255,255,255,0.06) !important;" id="devDiagnosticsDetails">
                         <summary class="text-white fw-bold d-flex align-items-center justify-content-between" style="font-size: 0.72rem; cursor: pointer; user-select: none;">
@@ -293,11 +317,17 @@
                                     <li>None compressed</li>
                                 </ul>
                             </div>
-                            <div>
+                            <div class="mb-2">
                                 <span class="text-muted d-block" style="font-size: 0.62rem;">Discarded Context</span>
                                 <ul class="ps-3 mb-0 text-danger" id="devDiscardedContext" style="font-size: 0.65rem; list-style-type: square;">
                                     <li>None discarded</li>
                                 </ul>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Micro-Profiler & Bottleneck Recs</span>
+                                <div class="p-2.5 rounded font-monospace" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); font-size: 0.65rem; color: #facc15;" id="devProfiler">
+                                    No profile recorded.
+                                </div>
                             </div>
                         </div>
                     </details>
@@ -764,17 +794,21 @@ document.addEventListener("DOMContentLoaded", function() {
         'EXPORT_PREP': 'Release Compiler'
     };
 
-    // State variables
-    let isRunning = false;
-    let forceRegen = false;
-    let currentIndex = -1;
-    let startTime = null;
-    let elapsedInterval = null;
-    let totalPhases = stepsData.length;
-    let completedCount = 0;
-    let qaScoresList = [];
-    let tokenStats = { input: 0, output: 0 };
-    let speedHistory = [];
+    // Centralized Swarm Execution State Object
+    const swarmState = {
+        isRunning: false,
+        forceRegen: false,
+        currentIndex: -1,
+        activeWorkersCount: 0, // Track active parallel execution slots
+        startTime: null,
+        stepStartTime: null, // Holds step start time
+        elapsedInterval: null,
+        totalPhases: stepsData ? stepsData.length : 0,
+        completedCount: 0,
+        qaScoresList: [],
+        tokenStats: { input: 0, output: 0 },
+        speedHistory: []
+    };
 
     // DOM Elements
     const btnLaunchSwarm = document.getElementById("btnLaunchSwarm");
@@ -811,22 +845,24 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Initialize UI counts
     function initializeCounts() {
+        if (!stepsData) return;
         const incomplete = stepsData.filter(s => s.status !== 'COMPLETED').length;
-        orcRemainingPhasesCount.textContent = incomplete;
+        if (orcRemainingPhasesCount) orcRemainingPhasesCount.textContent = incomplete;
         
         // If all completed on load, show export panel directly
         if (incomplete === 0) {
-            orcIdleActions.classList.add("d-none");
-            orcExportActions.classList.remove("d-none");
-            orcSuccessBlock.classList.remove("d-none");
-            orcTotalTime.textContent = "Finished";
-            orcSuccessQA.textContent = "9.4/10";
+            if (orcIdleActions) orcIdleActions.classList.add("d-none");
+            if (orcExportActions) orcExportActions.classList.remove("d-none");
+            if (orcSuccessBlock) orcSuccessBlock.classList.remove("d-none");
+            if (orcTotalTime) orcTotalTime.textContent = "Finished";
+            if (orcSuccessQA) orcSuccessQA.textContent = "9.4/10";
         }
     }
     initializeCounts();
 
     // Logger
     function logConsole(msg, type = "info") {
+        if (!orcConsole) return;
         const timeStr = new Date().toLocaleTimeString();
         let color = "#cbd5e1"; // gray
         let prefix = "⚙️ [SYSTEM]";
@@ -850,108 +886,135 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const logLine = `<div class="mb-1" style="color: ${color};"><span style="opacity:0.5; margin-right:4px;">[${timeStr}]</span> <strong>${prefix}</strong> ${msg}</div>`;
         orcConsole.insertAdjacentHTML('beforeend', logLine);
-        orcConsole.scrollTop = orcConsole.scrollHeight;
-    }
-
-    // Dynamic timer
+        orcConsole.scrol    // Dynamic timer
     function startElapsedTimer() {
-        startTime = Date.now();
-        elapsedInterval = setInterval(() => {
-            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-            const m = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
-            const s = (elapsedSeconds % 60).toString().padStart(2, '0');
+        swarmState.startTime = Date.now();
+        swarmState.elapsedInterval = setInterval(() => {
+            if (!swarmState.isRunning) {
+                stopElapsedTimer();
+                return;
+            }
+            const elapsedSeconds = Math.max(1, Math.floor((Date.now() - (swarmState.startTime || Date.now())) / 1000));
             
             // Calculate remaining steps
-            let remaining = 0;
-            if (forceRegen) {
-                remaining = totalPhases - (currentIndex + 1);
-            } else {
-                remaining = stepsData.slice(currentIndex).filter(s => s.status !== 'COMPLETED').length;
-            }
+            const remaining = stepsData.filter(s => s.status !== 'COMPLETED').length;
             
-            // ETA: ~15s per remaining step, decrementing
-            let etaSecs = remaining * 15 - (elapsedSeconds % 15);
-            if (etaSecs < 5) etaSecs = remaining * 5;
-            if (etaSecs <= 0) etaSecs = 5;
+            // ETA: adaptive calculation based on average duration of completed steps
+            let avgSpeed = 12.0; // default 12s per phase
+            if (swarmState.completedCount > 0) {
+                avgSpeed = elapsedSeconds / swarmState.completedCount;
+            }
+            let etaSecs = Math.round(remaining * avgSpeed);
+            if (etaSecs <= 0) etaSecs = 2;
             
             const etam = Math.floor(etaSecs / 60);
             const etas = etaSecs % 60;
-            orcETA.textContent = `~${etam}m ${etas}s`;
+            if (orcETA) orcETA.textContent = `~${etam}m ${etas}s`;
             
             // Speed metric
-            if (speedHistory.length > 0) {
-                const avgSpeed = (speedHistory.reduce((a,b)=>a+b, 0) / speedHistory.length / 1000).toFixed(1);
-                orcTerminalSpeed.textContent = `${avgSpeed}s / phase`;
+            if (swarmState.speedHistory.length > 0 && orcTerminalSpeed) {
+                const avgSpeedMs = (swarmState.speedHistory.reduce((a,b)=>a+b, 0) / swarmState.speedHistory.length / 1000).toFixed(1);
+                orcTerminalSpeed.textContent = `${avgSpeedMs}s / phase`;
             }
         }, 1000);
     }
 
     function stopElapsedTimer() {
-        if (elapsedInterval) {
-            clearInterval(elapsedInterval);
-            elapsedInterval = null;
+        if (swarmState.elapsedInterval) {
+            clearInterval(swarmState.elapsedInterval);
+            swarmState.elapsedInterval = null;
         }
     }
 
     // Main execution launcher
     function launchAutonomousSwarm(regenerateAll = false) {
-        if (isRunning) return;
-        isRunning = true;
-        forceRegen = regenerateAll;
-        currentIndex = 0;
-        completedCount = 0;
-        qaScoresList = [];
-        speedHistory = [];
+        if (swarmState.isRunning) return;
+        swarmState.isRunning = true;
+        swarmState.forceRegen = regenerateAll;
+        swarmState.currentIndex = 0;
+        swarmState.activeWorkersCount = 0;
+        swarmState.completedCount = 0;
+        swarmState.qaScoresList = [];
+        swarmState.speedHistory = [];
+
+        // Reset step statuses if regenerateAll is true
+        if (regenerateAll) {
+            stepsData.forEach(s => {
+                if (s.type !== 'IDEA') {
+                    s.status = 'PENDING';
+                }
+            });
+        }
 
         // Transition UI to running state
-        orcIdleActions.classList.add("d-none");
-        orcErrorActions.classList.add("d-none");
-        orcSuccessBlock.classList.add("d-none");
-        orcExportActions.classList.add("d-none");
+        if (orcIdleActions) orcIdleActions.classList.add("d-none");
+        if (orcErrorActions) orcErrorActions.classList.add("d-none");
+        if (orcSuccessBlock) orcSuccessBlock.classList.add("d-none");
+        if (orcExportActions) orcExportActions.classList.add("d-none");
 
-        orcDashboard.classList.remove("d-none");
-        orcTerminal.classList.remove("d-none");
-        orcHeaderBadge.textContent = "Swarm Running";
-        orcHeaderBadge.className = "badge bg-warning-glow text-warning";
+        if (orcDashboard) orcDashboard.classList.remove("d-none");
+        if (orcTerminal) orcTerminal.classList.remove("d-none");
+        if (orcHeaderBadge) {
+            orcHeaderBadge.textContent = "Swarm Running";
+            orcHeaderBadge.className = "badge bg-warning-glow text-warning";
+        }
 
         // Reset console log
-        orcConsole.innerHTML = "";
+        if (orcConsole) orcConsole.innerHTML = "";
         logConsole("⚡ Initiating autonomous agent swarm workspace compiler...", "info");
         logConsole("🔗 Connected to Gemini 2.5 Pro reasoning engine.", "info");
         logConsole("🔄 Scanning planning dependencies...", "info");
 
         startElapsedTimer();
-        processNextStep();
+        scheduleNextSteps();
     }
 
-    // Step processing logic
-    function processNextStep() {
-        if (!isRunning) return;
-
-        // Find next step to execute
-        let nextStepIndex = -1;
-        for (let i = currentIndex; i < stepsData.length; i++) {
-            if (forceRegen || stepsData[i].status !== 'COMPLETED') {
-                nextStepIndex = i;
-                break;
+    // Helper to evaluate dependencies
+    function areDependenciesMet(step) {
+        if (!step.dependencies_str) return true;
+        const depOrders = step.dependencies_str.split(',').map(x => x.trim()).filter(x => x);
+        for (const depOrderStr of depOrders) {
+            const depOrder = parseInt(depOrderStr);
+            const depStep = stepsData.find(s => s.order === depOrder);
+            if (depStep && depStep.status !== 'COMPLETED') {
+                return false;
             }
         }
+        return true;
+    }
 
-        if (nextStepIndex === -1) {
-            // Execution successfully complete
+    // Parallel schedule logic
+    function scheduleNextSteps() {
+        if (!swarmState.isRunning) return;
+
+        // Check if all steps are completed
+        const allCompleted = stepsData.every(s => s.status === 'COMPLETED');
+        if (allCompleted) {
             finishSwarmCompilation();
             return;
         }
 
-        currentIndex = nextStepIndex;
-        const step = stepsData[currentIndex];
-        executeStep(step);
+        // Find eligible steps
+        const eligibleSteps = stepsData.filter(step => {
+            return step.status !== 'COMPLETED' && step.status !== 'RUNNING' && areDependenciesMet(step);
+        });
+
+        // Launch eligible steps within the worker pool capacity (max 4 concurrent workers)
+        eligibleSteps.forEach(step => {
+            if (swarmState.activeWorkersCount >= 4) {
+                return;
+            }
+            step.status = 'RUNNING';
+            swarmState.activeWorkersCount++;
+            executeStep(step);
+        });
     }
 
     // Execute single step
     function executeStep(step) {
+        if (!step) return;
         const agent = agentNames[step.type] || 'Alpha Planner';
-        orcActiveAgent.textContent = agent;
+        if (orcActiveAgent) orcActiveAgent.textContent = agent;
         logConsole(`Spawning ${agent} to process Phase ${step.order}: ${step.title}...`, "running");
 
         // Update card styles dynamically in horizontal track
@@ -985,8 +1048,11 @@ document.addEventListener("DOMContentLoaded", function() {
             card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
 
-          // POST to execute AJAX endpoint
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // Set step start time in the step state directly for thread safety
+        step.stepStartTime = Date.now();
+
+        // POST to execute AJAX endpoint
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : "";
         
         fetch(step.runUrl, {
             method: 'POST',
@@ -994,7 +1060,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 'X-CSRFToken': csrfToken,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ force_regen: forceRegen })
+            body: JSON.stringify({ force_regen: swarmState.forceRegen })
         })
         .then(response => {
             if (!response.ok) {
@@ -1006,27 +1072,30 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(data => {
             if (data.success) {
-                const latency = Date.now() - stepStartTime;
-                speedHistory.push(latency);
+                const latency = Date.now() - (step.stepStartTime || Date.now());
+                swarmState.speedHistory.push(latency);
                 
                 // Track quality metric
                 const qa = data.qa_score || 9.2;
-                qaScoresList.push(qa);
+                swarmState.qaScoresList.push(qa);
                 
                 // Update step data
                 step.status = 'COMPLETED';
-                completedCount++;
+                swarmState.completedCount++;
+                swarmState.activeWorkersCount--;
 
                 // Update panel metrics
-                orcCompletedCount.textContent = `${completedCount} / ${totalPhases}`;
+                if (orcCompletedCount) orcCompletedCount.textContent = `${swarmState.completedCount} / ${swarmState.totalPhases}`;
                 
-                const avgQA = (qaScoresList.reduce((a,b)=>a+b, 0) / qaScoresList.length).toFixed(1);
-                orcAvgQA.textContent = `${avgQA}/10`;
+                if (orcAvgQA) {
+                    const avgQA = (swarmState.qaScoresList.reduce((a,b)=>a+b, 0) / swarmState.qaScoresList.length).toFixed(1);
+                    orcAvgQA.textContent = `${avgQA}/10`;
+                }
                 
                 // Progress percentage bar updates
-                const pct = Math.round((completedCount / totalPhases) * 100);
-                orcProgressPercent.textContent = `${pct}%`;
-                orcProgressBar.style.width = `${pct}%`;
+                const pct = Math.round((swarmState.completedCount / swarmState.totalPhases) * 100);
+                if (orcProgressPercent) orcProgressPercent.textContent = `${pct}%`;
+                if (orcProgressBar) orcProgressBar.style.width = `${pct}%`;
 
                 // Update Admin API Usage Monitor elements if they exist
                 const adminRequestCount = document.getElementById("adminRequestCount");
@@ -1054,6 +1123,29 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 }
 
+                // Update AI Provider Dashboard
+                if (data.provider_status) {
+                    const provActiveName = document.getElementById("providerActiveName");
+                    const provActiveModel = document.getElementById("providerActiveModel");
+                    const provFailoverLog = document.getElementById("providerFailoverLog");
+                    
+                    if (provActiveName) provActiveName.textContent = data.provider_status.active_provider || "Gemini";
+                    if (provActiveModel) provActiveModel.textContent = data.provider_status.active_model || "gemini-2.5-pro";
+                    
+                    if (provFailoverLog && data.provider_status.failover_events) {
+                        let logHtml = "";
+                        if (data.provider_status.failover_events.length > 0) {
+                            data.provider_status.failover_events.forEach(e => {
+                                const t = new Date(e.timestamp * 1000).toLocaleTimeString();
+                                logHtml += `[${t}] ${e.provider} failed: ${e.error.substring(0, 45)}...<br>`;
+                            });
+                        } else {
+                            logHtml = "No failover events logged";
+                        }
+                        provFailoverLog.innerHTML = logHtml;
+                    }
+                }
+
                 // Update Developer Diagnostics
                 const devFingerprint = document.getElementById("devFingerprint");
                 const devCacheHit = document.getElementById("devCacheHit");
@@ -1062,6 +1154,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const devSelectedDeps = document.getElementById("devSelectedDeps");
                 const devCompressedContext = document.getElementById("devCompressedContext");
                 const devDiscardedContext = document.getElementById("devDiscardedContext");
+                const devProfiler = document.getElementById("devProfiler");
 
                 if (data.diagnostics) {
                     const diag = data.diagnostics;
@@ -1128,6 +1221,20 @@ document.addEventListener("DOMContentLoaded", function() {
                             }
                         }
                     }
+
+                    // Render profiler & bottleneck report
+                    if (diag.profiler && devProfiler) {
+                        const prof = diag.profiler;
+                        let profHtml = "<strong>Execution Components:</strong><br>";
+                        if (prof.summary && prof.summary.length > 0) {
+                            prof.summary.forEach(s => { profHtml += `- ${s}<br>`; });
+                        }
+                        profHtml += "<br><strong>Bottleneck Recommendations:</strong><br>";
+                        if (prof.recommendations && prof.recommendations.length > 0) {
+                            prof.recommendations.forEach(r => { profHtml += `- <em>${r}</em><br>`; });
+                        }
+                        devProfiler.innerHTML = profHtml;
+                    }
                 }
 
                 // Success logging
@@ -1151,20 +1258,21 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
                 if (footer) {
                     footer.innerHTML = `<div class="d-flex align-items-center justify-content-between">
-                         <span class="text-success fw-semibold" style="font-size: 0.65rem;"><i class="bi bi-patch-check-fill"></i> Approved</span>
-                        <a href="/generator/artifact/${data.step_id || step.id}/" class="btn btn-sm py-0.5 px-2" style="font-size: 0.6rem; background: rgba(34,197,94,0.08); color: #4ade80; border-radius: 4px;">
-                            <i class="bi bi-eye"></i> View
-                        </a>
-                    </div>`;
+                          <span class="text-success fw-semibold" style="font-size: 0.65rem;"><i class="bi bi-patch-check-fill"></i> Approved</span>
+                         <a href="/generator/artifact/${data.step_id || step.id}/" class="btn btn-sm py-0.5 px-2" style="font-size: 0.6rem; background: rgba(34,197,94,0.08); color: #4ade80; border-radius: 4px;">
+                             <i class="bi bi-eye"></i> View
+                         </a>
+                     </div>`;
                 }
 
-                // Proceed sequentially
-                setTimeout(processNextStep, 500);
+                // Schedule next eligible steps concurrently
+                scheduleNextSteps();
             } else {
                 throw new Error(data.error || "Generation payload error");
             }
         })
         .catch(err => {
+            swarmState.activeWorkersCount--;
             logConsole(`Execution failed for Phase ${step.order}: ${err.message}`, "error");
             handleStepFailure(step, err.message);
         });
@@ -1172,12 +1280,45 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Step failure handler
     function handleStepFailure(step, errorMsg) {
+        // Check if all providers are exhausted / quota limit hit
+        const isQuotaError = errorMsg.toLowerCase().includes("quota") || errorMsg.toLowerCase().includes("limit exceeded") || errorMsg.toLowerCase().includes("429");
+        
+        if (isQuotaError) {
+            logConsole(`⚠️ All providers temporarily exhausted. Persisting state & initiating auto-retry countdown...`, "warning");
+            
+            let countdown = 15;
+            if (orcHeaderBadge) {
+                orcHeaderBadge.textContent = `Retrying in ${countdown}s`;
+                orcHeaderBadge.className = "badge bg-warning-glow text-warning animate-pulse";
+            }
+            
+            const interval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    logConsole(`🔄 Countdown finished. Retrying Phase ${step.order}: ${step.title}...`, "info");
+                    
+                    // Reset card state to running
+                    step.status = 'PENDING';
+                    swarmState.isRunning = true;
+                    startElapsedTimer();
+                    scheduleNextSteps();
+                } else {
+                    if (orcHeaderBadge) orcHeaderBadge.textContent = `Retrying in ${countdown}s`;
+                }
+            }, 1000);
+            
+            return;
+        }
+
         stopElapsedTimer();
-        isRunning = false;
+        swarmState.isRunning = false;
         
         // Update dashboard status indicators
-        orcHeaderBadge.textContent = "Swarm Paused";
-        orcHeaderBadge.className = "badge bg-danger-glow text-danger";
+        if (orcHeaderBadge) {
+            orcHeaderBadge.textContent = "Swarm Paused";
+            orcHeaderBadge.className = "badge bg-danger-glow text-danger";
+        }
         
         // Update step card to failed
         const card = document.getElementById(`step-card-${step.id}`);
@@ -1202,68 +1343,81 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         // Show error actions
-        orcErrorMsg.textContent = `${step.title}: ${errorMsg}`;
-        orcErrorActions.classList.remove("d-none");
+        if (orcErrorMsg) orcErrorMsg.textContent = `${step.title}: ${errorMsg}`;
+        if (orcErrorActions) orcErrorActions.classList.remove("d-none");
     }
 
     // Success finalizer
     function finishSwarmCompilation() {
         stopElapsedTimer();
-        isRunning = false;
+        swarmState.isRunning = false;
         
         logConsole("✨ All lifecycle planning phases executed successfully!", "success");
         logConsole("🚀 Final distribution packages prepared. Ready for download.", "success");
 
         // Calculate total elapsed time
-        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const elapsedSeconds = Math.floor((Date.now() - (swarmState.startTime || Date.now())) / 1000);
         const m = Math.floor(elapsedSeconds / 60);
         const s = elapsedSeconds % 60;
-        orcTotalTime.textContent = `${m} min ${s} sec`;
+        if (orcTotalTime) orcTotalTime.textContent = `${m} min ${s} sec`;
         
-        const finalQA = qaScoresList.length > 0 ? (qaScoresList.reduce((a,b)=>a+b, 0) / qaScoresList.length).toFixed(1) : "9.4";
-        orcSuccessQA.textContent = `${finalQA}/10`;
+        const finalQA = swarmState.qaScoresList.length > 0 ? (swarmState.qaScoresList.reduce((a,b)=>a+b, 0) / swarmState.qaScoresList.length).toFixed(1) : "9.4";
+        if (orcSuccessQA) orcSuccessQA.textContent = `${finalQA}/10`;
 
-        orcHeaderBadge.textContent = "Swarm Complete";
-        orcHeaderBadge.className = "badge bg-success-glow text-success";
+        if (orcHeaderBadge) {
+            orcHeaderBadge.textContent = "Swarm Complete";
+            orcHeaderBadge.className = "badge bg-success-glow text-success";
+        }
 
         // Transition views
-        orcDashboard.classList.add("d-none");
-        orcTerminal.classList.add("d-none");
-        orcSuccessBlock.classList.remove("d-none");
-        orcExportActions.classList.remove("d-none");
+        if (orcDashboard) orcDashboard.classList.add("d-none");
+        if (orcTerminal) orcTerminal.classList.add("d-none");
+        if (orcSuccessBlock) orcSuccessBlock.classList.remove("d-none");
+        if (orcExportActions) orcExportActions.classList.remove("d-none");
     }
 
     // Retry and skip button events
-    btnRetryStep.addEventListener("click", function() {
-        orcErrorActions.classList.add("d-none");
-        isRunning = true;
-        logConsole(`Retrying Phase ${stepsData[currentIndex].order}: ${stepsData[currentIndex].title}...`, "warning");
-        startElapsedTimer();
-        executeStep(stepsData[currentIndex]);
-    });
+    if (btnRetryStep) {
+        btnRetryStep.addEventListener("click", function() {
+            if (swarmState.isRunning) return;
+            if (orcErrorActions) orcErrorActions.classList.add("d-none");
+            swarmState.isRunning = true;
+            logConsole(`Retrying Phase ${stepsData[swarmState.currentIndex].order}: ${stepsData[swarmState.currentIndex].title}...`, "warning");
+            startElapsedTimer();
+            executeStep(stepsData[swarmState.currentIndex]);
+        });
+    }
 
-    btnSkipStep.addEventListener("click", function() {
-        orcErrorActions.classList.add("d-none");
-        isRunning = true;
-        logConsole(`Skipping Phase ${stepsData[currentIndex].order}: ${stepsData[currentIndex].title}.`, "warning");
-        startElapsedTimer();
-        currentIndex++;
-        processNextStep();
-    });
+    if (btnSkipStep) {
+        btnSkipStep.addEventListener("click", function() {
+            if (orcErrorActions) orcErrorActions.classList.add("d-none");
+            swarmState.isRunning = true;
+            logConsole(`Skipping Phase ${stepsData[swarmState.currentIndex].order}: ${stepsData[swarmState.currentIndex].title}.`, "warning");
+            startElapsedTimer();
+            swarmState.currentIndex++;
+            processNextStep();
+        });
+    }
 
     // Launch Button events
-    btnLaunchSwarm.addEventListener("click", function() {
-        launchPulse.classList.remove("d-none");
-        launchIcon.classList.add("d-none");
-        btnLaunchSwarm.setAttribute("disabled", "true");
-        launchAutonomousSwarm(false);
-    });
+    if (btnLaunchSwarm) {
+        btnLaunchSwarm.addEventListener("click", function() {
+            if (swarmState.isRunning) return;
+            if (launchPulse) launchPulse.classList.remove("d-none");
+            if (launchIcon) launchIcon.classList.add("d-none");
+            btnLaunchSwarm.setAttribute("disabled", "true");
+            launchAutonomousSwarm(false);
+        });
+    }
 
-    btnForceRegen.addEventListener("click", function() {
-        if (confirm("Are you sure you want to regenerate all phases? This will overwrite previous approved plans.")) {
-            launchAutonomousSwarm(true);
-        }
-    });
+    if (btnForceRegen) {
+        btnForceRegen.addEventListener("click", function() {
+            if (swarmState.isRunning) return;
+            if (confirm("Are you sure you want to regenerate all phases? This will overwrite previous approved plans.")) {
+                launchAutonomousSwarm(true);
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
