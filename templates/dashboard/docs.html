@@ -1,51 +1,22 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}SpecPilot AI - Documentation Guide{% endblock %}
-{% block page_title %}Documentation & Help{% endblock %}
+{% block title %}System Documentation — SpecPilot AI{% endblock %}
+
+{% comment %}
+Shared body template for both authenticated (dashboard) and public visitors.
+{% endcomment %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-9 col-xl-8">
-        <div class="glass-panel border-0 p-4 p-md-5">
-            <h3 class="text-white fw-bold mb-3" style="letter-spacing: -0.03em;">Platform Help & Setup Guides</h3>
-            <p class="text-secondary mb-4" style="font-size: 0.95rem;">Quick reference instructions detailing setup, prompt customizations, and credentials overrides.</p>
+<!-- Dashboard Content View (Authenticated) -->
+<div class="py-4">
+    {% include 'partials/docs_body.html' %}
+</div>
+{% endblock %}
 
-            <div class="d-flex flex-column gap-4 text-secondary mt-4" style="font-size: 0.92rem; line-height: 1.6;">
-                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--card-border);">
-                    <h5 class="text-white fw-bold d-flex align-items-center gap-2 mb-2" style="font-size: 1.05rem;">
-                        <i class="bi bi-gear-fill text-primary"></i> 
-                        1. Configuring Gemini API Credentials
-                    </h5>
-                    <p class="mb-0 text-secondary" style="text-align: justify;">SpecPilot AI queries Google's Gemini LLMs to write specifications. By default, the system loads the key from the <code>GEMINI_API_KEY</code> environment variable in your root directory. Alternatively, developers can specify a key inside the <a href="{% url 'settings' %}" class="text-primary text-decoration-none hover-underline">System Settings</a> page to override it for their active session.</p>
-                </div>
-
-                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--card-border);">
-                    <h5 class="text-white fw-bold d-flex align-items-center gap-2 mb-2" style="font-size: 1.05rem;">
-                        <i class="bi bi-play-circle-fill text-accent"></i> 
-                        2. Executing Workflow Steps
-                    </h5>
-                    <p class="mb-0 text-secondary" style="text-align: justify;">Navigate to any project workspace. If previous steps are <code>COMPLETED</code>, the subsequent stage button becomes active. Clicking "Run Planning Step" initiates the active Agent's task. Once execution concludes, the spec status enters a "Pending Review" lock state.</p>
-                </div>
-
-                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--card-border);">
-                    <h5 class="text-white fw-bold d-flex align-items-center gap-2 mb-2" style="font-size: 1.05rem;">
-                        <i class="bi bi-journal-check text-success"></i> 
-                        3. Reviewing & Editing Specifications
-                    </h5>
-                    <p class="mb-0 text-secondary" style="text-align: justify;">Click the generated specification block or select "View & Review". You can:
-                    <ul class="mt-2 mb-0 ps-3">
-                        <li><strong>Approve:</strong> Unlocks the next planning stage.</li>
-                        <li><strong>Reject:</strong> Flags the stage as FAILED, allowing you to run regeneration.</li>
-                        <li><strong>Edit:</strong> Modifies the specification text manually, which saves the update as an incremented version draft.</li>
-                    </ul>
-                    </p>
-                </div>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
-                <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom px-4 py-2 border-0">Back to Dashboard</a>
-            </div>
-        </div>
-    </div>
+{% block public_content %}
+<!-- Public Landing Content View (Unauthenticated) -->
+<div class="container py-5">
+    {% include 'partials/docs_body.html' %}
 </div>
 {% endblock %}

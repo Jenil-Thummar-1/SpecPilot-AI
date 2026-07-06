@@ -1,0 +1,121 @@
+<div class="row g-4">
+    <!-- Sidebar Navigation -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <div class="position-sticky" style="top: 100px;">
+            <h6 class="text-white small fw-bold text-uppercase mb-3" style="letter-spacing: 0.08em;">Documentation</h6>
+            <div class="list-group list-group-flush d-flex flex-column gap-1">
+                <a href="#doc-intro" class="list-group-item list-group-item-action bg-transparent text-secondary border-0 small px-0 hover-text-white py-1"><i class="bi bi-book me-2"></i> 1. Introduction</a>
+                <a href="#doc-gemini" class="list-group-item list-group-item-action bg-transparent text-secondary border-0 small px-0 hover-text-white py-1"><i class="bi bi-key me-2"></i> 2. Gemini Configuration</a>
+                <a href="#doc-fsm" class="list-group-item list-group-item-action bg-transparent text-secondary border-0 small px-0 hover-text-white py-1"><i class="bi bi-diagram-3 me-2"></i> 3. Running the Pipeline</a>
+                <a href="#doc-version" class="list-group-item list-group-item-action bg-transparent text-secondary border-0 small px-0 hover-text-white py-1"><i class="bi bi-git me-2"></i> 4. Version Control</a>
+                <a href="#doc-export" class="list-group-item list-group-item-action bg-transparent text-secondary border-0 small px-0 hover-text-white py-1"><i class="bi bi-download me-2"></i> 5. Exporting Assets</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Panel -->
+    <div class="col-lg-9 col-md-12">
+        <div class="glass-panel p-4 p-md-5 border-0">
+            <!-- Title -->
+            <div class="border-bottom pb-4 mb-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                <h1 class="text-white fw-bold mb-2 display-6" style="letter-spacing: -0.02em; font-family: var(--font-family-display);">System Reference Guide</h1>
+                <p class="text-secondary mb-0">Learn how to configure, execute, audit, and export systems inside SpecPilot AI.</p>
+            </div>
+
+            <!-- Section 1 -->
+            <section id="doc-intro" class="mb-5">
+                <h3 class="text-white fw-bold h5 mb-3 d-flex align-items-center gap-2" style="font-family: var(--font-family-display);">
+                    1. Introduction to SpecPilot AI
+                </h3>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    SpecPilot AI utilizes hierarchical LLM networks to compile complete project blueprints from simple, unstructured descriptions. The platform coordinates multiple specialized agents (Architects, Planners, and Quality specialists) across a 15-stage planning lifecycle.
+                </p>
+            </section>
+
+            <!-- Section 2 -->
+            <section id="doc-gemini" class="mb-5">
+                <h3 class="text-white fw-bold h5 mb-3 d-flex align-items-center gap-2" style="font-family: var(--font-family-display);">
+                    2. Gemini API Credentials Configuration
+                </h3>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    To initiate agent runs, the platform requires standard access keys to Google's Gemini models. By default, the application checks your root <code>.env</code> file.
+                </p>
+                <p class="text-secondary small">
+                    Create a file named <code>.env</code> in your root directory and define the following key:
+                </p>
+                <div class="mb-3">
+                    <pre><code class="language-env"># Root .env configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+</code></pre>
+                </div>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    Alternatively, developers can configure the credentials on the **System Settings** page within the workspace, which overrides the environmental variable for the active session.
+                </p>
+            </section>
+
+            <!-- Section 3 -->
+            <section id="doc-fsm" class="mb-5">
+                <h3 class="text-white fw-bold h5 mb-3 d-flex align-items-center gap-2" style="font-family: var(--font-family-display);">
+                    3. Executing the FSM Pipeline
+                </h3>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    When inside a project workspace, SpecPilot renders a stage sequence tracker. Clicking **"Run Planning Step"** initiates the active agent.
+                </p>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    The active agent compiles its specific segment (e.g. Entity Models) by matching context files against strict system instructions. Once finished, the segment enters a locked **Pending Review** state where you can either:
+                </p>
+                <ul class="text-secondary small ps-3 d-flex flex-column gap-2 mb-0">
+                    <li><strong>Approve:</strong> Confirms the layout and unlocks the subsequent planning stage.</li>
+                    <li><strong>Reject:</strong> Sets the stage to FAILED, allowing you to re-run generation with modified scopes.</li>
+                    <li><strong>Edit:</strong> Directly edit the draft text manually. Saving edits automatically locks a new sub-version.</li>
+                </ul>
+            </section>
+
+            <!-- Section 4 -->
+            <section id="doc-version" class="mb-5">
+                <h3 class="text-white fw-bold h5 mb-3 d-flex align-items-center gap-2" style="font-family: var(--font-family-display);">
+                    4. Version Snapshots
+                </h3>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    Every stage in SpecPilot AI keeps a historical timeline of drafts. Every manual edit, rejection re-run, or parameter change increments the sub-version index. Use the snapshot dropdown inside the editing workspace to roll back to previous drafts at any time.
+                </p>
+            </section>
+
+            <!-- Section 5 -->
+            <section id="doc-export" class="mb-4">
+                <h3 class="text-white fw-bold h5 mb-3 d-flex align-items-center gap-2" style="font-family: var(--font-family-display);">
+                    5. Exporting Assets
+                </h3>
+                <p class="text-secondary small" style="line-height: 1.6; text-align: justify;">
+                    After completing the final stage, clicking the export panel compiles the entire state history into structured, portable artifacts:
+                </p>
+                <div class="mb-3">
+                    <pre><code class="language-json">{
+  "project_id": "proj_01j7h",
+  "version": "1.4.0",
+  "compiled_at": "2026-07-06T14:55:00Z",
+  "stages": {
+    "prd": "...markdown description...",
+    "database": "...sql code block...",
+    "api_definition": "...openapi yaml..."
+  }
+}
+</code></pre>
+                </div>
+                <p class="text-secondary small mb-0" style="line-height: 1.6; text-align: justify;">
+                    You can download these files as unified markdown textbooks, structured JSON configuration records, or a zipped archive containing independent code documents.
+                </p>
+            </section>
+        </div>
+        
+        <!-- Bottom Back / Nav Button -->
+        <div class="d-flex align-items-center justify-content-end gap-3 mt-4">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom px-4 py-2">Back to Dashboard</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-outline-secondary px-4 py-2 sp-login-btn">Sign In</a>
+                <a href="{% url 'register' %}" class="btn btn-primary-custom px-4 py-2">Get Started</a>
+            {% endif %}
+        </div>
+    </div>
+</div>

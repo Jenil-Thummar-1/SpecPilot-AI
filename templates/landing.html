@@ -1,82 +1,257 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}SpecPilot AI - AI Project Architect & Software Planning Agent{% endblock %}
+{% block title %}SpecPilot AI — The Autonomous Software Architect{% endblock %}
 
 {% block landing_content %}
-<div class="container-fluid min-vh-100 p-0 d-flex flex-column justify-content-between" style="background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);">
-    
-    <!-- Header -->
-    <header class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom" style="border-color: rgba(255,255,255,0.05);">
-        <a href="/" class="d-flex align-items-center gap-2 text-decoration-none fs-4 fw-bold text-white" style="font-family: var(--font-family-display);">
-            <i class="bi bi-airplane-engines-fill text-primary"></i>
-            <span>SpecPilot <span class="text-gradient">AI</span></span>
-        </a>
-        <div class="d-flex align-items-center gap-3">
-            <a href="{% url 'login' %}" class="btn btn-outline-secondary border-0 fw-semibold text-secondary hover-text-white">Sign In</a>
-            <a href="{% url 'register' %}" class="btn btn-primary-custom">Get Started</a>
-        </div>
-    </header>
+<div class="min-vh-100 position-relative" style="overflow-x: hidden;">
 
-    <!-- Hero Section -->
-    <section class="container my-auto py-5 text-center">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <span class="badge rounded-pill mb-4 px-3 py-2 border border-primary text-primary" style="background: var(--primary-glow); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em;">ENTERPRISE AI ARCHITECT AGENT</span>
-                <h1 class="display-3 fw-extrabold mb-4 text-gradient-hero" style="font-family: var(--font-family-display); line-height: 1.15;">
-                    Transform Software Ideas into Production blueprints
+    <!-- ============ HERO ============ -->
+    <section class="container pt-3 pb-5">
+        <div class="row align-items-center g-5 py-4">
+            <div class="col-lg-6 sp-reveal">
+                <span class="sp-hero-eyebrow mb-4"><span class="dot"></span> Autonomous Software Agent Lifecycle</span>
+                <h1 class="display-3 mb-4" style="line-height: 1.15; font-family: var(--font-family-display);">
+                    <span class="text-white">Turn a raw idea into a</span>
+                    <span class="text-gradient d-block" style="background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">production blueprint.</span>
                 </h1>
-                <p class="lead text-secondary mb-5 mx-auto" style="max-width: 750px; font-size: 1.2rem; line-height: 1.6;">
-                    Not a chatbot. SpecPilot AI is a structured, multi-agent project planner that executes a complete 14-step lifecycle—generating requirements, system architectures, database designs, API specifications, and roadmap templates.
+                <p class="text-secondary mb-4" style="max-width: 540px; font-size: 1.08rem; line-height: 1.7;">
+                    SpecPilot AI is not a generic chat box. It is a multi-agent state machine that collaborates to compile software specs, database schemas, OpenAPI endpoints, and roadmap timelines, then performs self-graded testing audits.
                 </p>
-                <div class="d-flex align-items-center justify-content-center gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-5">
                     <a href="{% url 'register' %}" class="btn btn-lg btn-primary-custom px-4 py-3">
-                        Launch Architect Agent <i class="bi bi-arrow-right-short ms-2"></i>
+                        Launch the Architect <i class="bi bi-arrow-right-short ms-2"></i>
                     </a>
-                    <a href="#how-it-works" class="btn btn-lg btn-outline-secondary glass-card border-0 px-4 py-3 text-secondary">
-                        See Lifecycle Roadmap
+                    <a href="#how-it-works" class="btn btn-lg btn-secondary-custom px-4 py-3">
+                        Explore Lifecycle
                     </a>
+                </div>
+                <div class="d-flex align-items-center gap-4 text-secondary small">
+                    <span><i class="bi bi-shield-check text-accent me-1"></i> Self-graded quality checks</span>
+                    <span><i class="bi bi-clock-history text-primary me-1"></i> Full version history</span>
+                </div>
+            </div>
+
+            <!-- Redesigned Animated Multi-Agent Pipeline Graphic -->
+            <div class="col-lg-6 sp-reveal" data-reveal-delay="120">
+                <div class="sp-flow-visualizer">
+                    <div class="sp-flow-line-wrapper">
+                        <svg class="sp-flow-line-svg" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="flow-line-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--primary)" />
+                                    <stop offset="50%" stop-color="var(--accent)" />
+                                    <stop offset="100%" stop-color="var(--success)" />
+                                </linearGradient>
+                            </defs>
+                            <line x1="1" y1="0" x2="1" y2="100%" class="sp-flow-line-bg" />
+                            <line x1="1" y1="0" x2="1" y2="100%" class="sp-flow-line-active" />
+                        </svg>
+                    </div>
+                    
+                    <div class="sp-flow-cards-container">
+                        <!-- Step 1 -->
+                        <div class="sp-flow-card active" data-step="0">
+                            <div class="sp-flow-node-dot">
+                                <i class="bi bi-lightbulb-fill"></i>
+                            </div>
+                            <div class="sp-flow-card-info">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-warning-glow text-warning">01. Idea</span>
+                                    <h6 class="text-white mb-0 fw-semibold">Software Idea Input</h6>
+                                </div>
+                                <p class="text-secondary small mb-0 mt-1" style="font-size: 0.8rem;">Define scope, user stories, and target tech stack parameters.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="sp-flow-card" data-step="1">
+                            <div class="sp-flow-node-dot">
+                                <i class="bi bi-diagram-3-fill"></i>
+                            </div>
+                            <div class="sp-flow-card-info">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary-glow text-primary">02. Design</span>
+                                    <h6 class="text-white mb-0 fw-semibold">Architect Agent</h6>
+                                </div>
+                                <p class="text-secondary small mb-0 mt-1" style="font-size: 0.8rem;">Generates system entities, normalized SQL schemas, and REST routes.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="sp-flow-card" data-step="2">
+                            <div class="sp-flow-node-dot">
+                                <i class="bi bi-calendar-event-fill"></i>
+                            </div>
+                            <div class="sp-flow-card-info">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-info-glow text-info">03. Schedule</span>
+                                    <h6 class="text-white mb-0 fw-semibold">Planner Agent</h6>
+                                </div>
+                                <p class="text-secondary small mb-0 mt-1" style="font-size: 0.8rem;">Allocates tasks into agile sprints, roadmap milestones, and epics.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="sp-flow-card" data-step="3">
+                            <div class="sp-flow-node-dot">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="sp-flow-card-info">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success-glow text-success">04. Audit</span>
+                                    <h6 class="text-white mb-0 fw-semibold">QA Agent</h6>
+                                </div>
+                                <p class="text-secondary small mb-0 mt-1" style="font-size: 0.8rem;">Scores blueprint accuracy and security controls before exporting.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div class="sp-flow-card" data-step="4">
+                            <div class="sp-flow-node-dot">
+                                <i class="bi bi-file-earmark-zip-fill"></i>
+                            </div>
+                            <div class="sp-flow-card-info">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-secondary-glow text-secondary">05. Export</span>
+                                    <h6 class="text-white mb-0 fw-semibold">ZIP Blueprint Pack</h6>
+                                </div>
+                                <p class="text-secondary small mb-0 mt-1" style="font-size: 0.8rem;">Downloads combined specification documents, JSON files, and MD assets.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logo / tech loop marquee -->
+        <div class="sp-marquee mt-5 py-3 border-top border-bottom" style="border-color: var(--card-border) !important;">
+            <div class="sp-marquee-track text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.08em;">
+                <div class="sp-marquee-item"><i class="bi bi-code-square"></i> Requirements Engine</div>
+                <div class="sp-marquee-item"><i class="bi bi-diagram-2"></i> System Architecture</div>
+                <div class="sp-marquee-item"><i class="bi bi-database"></i> Database Design</div>
+                <div class="sp-marquee-item"><i class="bi bi-braces"></i> OpenAPI Specification</div>
+                <div class="sp-marquee-item"><i class="bi bi-shield-check"></i> Self-Graded Compliance</div>
+                <div class="sp-marquee-item"><i class="bi bi-file-diff"></i> Version Snapshots</div>
+                <div class="sp-marquee-item"><i class="bi bi-download"></i> Unified ZIP Export</div>
+                <div class="sp-marquee-item"><i class="bi bi-cpu"></i> Short &amp; Long Memory</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ CAPABILITIES ============ -->
+    <section id="capabilities" class="container py-5">
+        <div class="row justify-content-center text-center mb-5 sp-reveal">
+            <div class="col-lg-7">
+                <span class="text-accent small fw-bold text-uppercase" style="letter-spacing: 0.08em;">Capabilities</span>
+                <h2 class="display-3 mt-2 mb-3" style="font-size: 2.4rem; font-family: var(--font-family-display);">Systematic Planning, Not Guesswork.</h2>
+                <p class="text-secondary mb-0">SpecPilot AI operates as a collaborative developer crew, processing tasks sequentially through checking layers.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4 sp-reveal">
+                <div class="glass-card h-100 p-4 hoverable">
+                    <div class="icon-tile bg-primary-glow mb-4"><i class="bi bi-diagram-3-fill text-primary"></i></div>
+                    <h5 class="text-white fw-bold mb-2">Structured Design Patterns</h5>
+                    <p class="text-secondary small mb-3" style="line-height: 1.6;">
+                        Generates specifications split logically into entities, schemas, models, and routes based on production-tested paradigms.
+                    </p>
+                    <ul class="text-secondary small ps-3 mb-0 d-flex flex-column gap-1">
+                        <li>Relational SQL Schemas</li>
+                        <li>Clean architecture separation</li>
+                        <li>SOLID component maps</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4 sp-reveal" data-reveal-delay="80">
+                <div class="glass-card h-100 p-4 hoverable">
+                    <div class="icon-tile bg-accent-glow mb-4"><i class="bi bi-database-fill-gear text-accent"></i></div>
+                    <h5 class="text-white fw-bold mb-2">Workspace context database</h5>
+                    <p class="text-secondary small mb-3" style="line-height: 1.6;">
+                        Stores parameters in short-term session slots and long-term memory blocks to maintain consistency across generation steps.
+                    </p>
+                    <ul class="text-secondary small ps-3 mb-0 d-flex flex-column gap-1">
+                        <li>Shared tech-stack definitions</li>
+                        <li>Custom framework configurations</li>
+                        <li>Context-aligned prompt memory</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4 sp-reveal" data-reveal-delay="160">
+                <div class="glass-card h-100 p-4 hoverable">
+                    <div class="icon-tile bg-success-glow mb-4"><i class="bi bi-shield-lock-fill text-success"></i></div>
+                    <h5 class="text-white fw-bold mb-2">Automated Heuristic Grading</h5>
+                    <p class="text-secondary small mb-3" style="line-height: 1.6;">
+                        Every generated file undergoes automated evaluation loops to check for credentials leakage, error handling, and test-readiness.
+                    </p>
+                    <ul class="text-secondary small ps-3 mb-0 d-flex flex-column gap-1">
+                        <li>Security & vulnerability check</li>
+                        <li>Completeness scoring indices</li>
+                        <li>Looping correction mechanisms</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Key value feature blocks -->
-    <section class="container my-5">
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4">
-                <div class="glass-panel text-center h-100 p-4 border-0" style="background: rgba(255,255,255,0.015);">
-                    <div class="rounded-circle bg-primary-glow p-3 d-inline-flex mb-4">
-                        <i class="bi bi-diagram-3-fill fs-3 text-primary"></i>
-                    </div>
-                    <h4 class="mb-3">Clean Architecture</h4>
-                    <p class="text-secondary small mb-0">Decouples core business processes into modular service operations, built to align with SOLID enterprise patterns.</p>
+    <!-- ============ HOW IT WORKS ============ -->
+    <section id="how-it-works" class="container py-5">
+        <div class="row justify-content-center text-center mb-5 sp-reveal">
+            <div class="col-lg-7">
+                <span class="text-primary small fw-bold text-uppercase" style="letter-spacing: 0.08em;">Lifecycle</span>
+                <h2 class="display-3 mt-2 mb-3" style="font-size: 2.4rem; font-family: var(--font-family-display);">The Spec Compilation Pipeline</h2>
+            </div>
+        </div>
+
+        <div class="row g-4 sp-step-line justify-content-center">
+            <div class="col-md-6 col-lg-2-4 sp-lifecycle-step sp-reveal">
+                <div class="glass-card p-4 h-100 position-relative">
+                    <span class="badge bg-primary-glow text-primary mb-3">01</span>
+                    <h6 class="text-white fw-bold mb-2">Scope Input</h6>
+                    <p class="text-secondary small mb-0">Input project scopes, choose a framework stack, and configure system preferences.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="glass-panel text-center h-100 p-4 border-0" style="background: rgba(255,255,255,0.015);">
-                    <div class="rounded-circle bg-accent-glow p-3 d-inline-flex mb-4">
-                        <i class="bi bi-database-fill-gear fs-3 text-accent"></i>
-                    </div>
-                    <h4 class="mb-3">Context & Memory</h4>
-                    <p class="text-secondary small mb-0">Maintains short-term user execution parameters alongside long-term roadmap archives to enforce formatting rules.</p>
+            <div class="col-md-6 col-lg-2-4 sp-lifecycle-step sp-reveal" data-reveal-delay="60">
+                <div class="glass-card p-4 h-100">
+                    <span class="badge bg-accent-glow text-accent mb-3">02</span>
+                    <h6 class="text-white fw-bold mb-2">Orchestrated Planning</h6>
+                    <p class="text-secondary small mb-0">Agents collaborate in a state machine sequence, passing output blocks between stages.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="glass-panel text-center h-100 p-4 border-0" style="background: rgba(255,255,255,0.015);">
-                    <div class="rounded-circle bg-primary-glow p-3 d-inline-flex mb-4" style="background: rgba(16, 185, 129, 0.1);">
-                        <i class="bi bi-shield-lock-fill fs-3 text-success"></i>
-                    </div>
-                    <h4 class="mb-3">Safety & Validation</h4>
-                    <p class="text-secondary small mb-0">Heuristic guards check AI output formats and enforce safety filters before rendering files for users.</p>
+            <div class="col-md-6 col-lg-2-4 sp-lifecycle-step sp-reveal" data-reveal-delay="120">
+                <div class="glass-card p-4 h-100">
+                    <span class="badge bg-warning-glow text-warning mb-3">03</span>
+                    <h6 class="text-white fw-bold mb-2">Audit Checkpoints</h6>
+                    <p class="text-secondary small mb-0">Check compliance ratings, read system warnings, and apply direct edits on lock states.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2-4 sp-lifecycle-step sp-reveal" data-reveal-delay="180">
+                <div class="glass-card p-4 h-100">
+                    <span class="badge bg-success-glow text-success mb-3">04</span>
+                    <h6 class="text-white fw-bold mb-2">Version Locking</h6>
+                    <p class="text-secondary small mb-0">Roll back specifications using automatic change snapshots when parameters mutate.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2-4 sp-lifecycle-step sp-reveal" data-reveal-delay="240">
+                <div class="glass-card p-4 h-100">
+                    <span class="badge bg-secondary-glow text-secondary mb-3">05</span>
+                    <h6 class="text-white fw-bold mb-2">ZIP Packaging</h6>
+                    <p class="text-secondary small mb-0">Download combined plans as clean Markdown files, structured JSON data, or zipped books.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="text-center py-4 border-top" style="border-color: rgba(255,255,255,0.05);">
-        <p class="small text-secondary mb-0">© 2026 SpecPilot AI. Designed and Engineered with Django 5 & Gemini API.</p>
-    </footer>
+    <!-- ============ CTA ============ -->
+    <section class="container py-5">
+        <div class="sp-cta-panel glow-cta p-5 text-center sp-reveal">
+            <h2 class="display-3 mb-3 text-white" style="font-size: 2.2rem; font-family: var(--font-family-display);">Design Your Technical Architecture</h2>
+            <p class="text-secondary mb-4 mx-auto" style="max-width: 480px;">Initialize a project workspace now. Bring plans to development maturity in a self-checking environment.</p>
+            <a href="{% url 'register' %}" class="btn btn-lg btn-primary-custom px-5 py-3">
+                Create Your Workspace <i class="bi bi-arrow-right-short ms-2"></i>
+            </a>
+        </div>
+    </section>
 </div>
 {% endblock %}

@@ -105,7 +105,7 @@
 {% if projects %}
     <div class="row g-3 mb-4">
         {% for project in projects %}
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-lg-4 sp-reveal" data-reveal-delay="{{ forloop.counter0|add:'0' }}0">
                 <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.012);">
                     <div>
                         <!-- Header metadata -->

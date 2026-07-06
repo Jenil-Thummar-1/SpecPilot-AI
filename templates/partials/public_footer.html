@@ -1,0 +1,63 @@
+<footer class="sp-public-footer py-5 mt-5 border-top" style="border-color: var(--card-border) !important;">
+    <div class="container">
+        <div class="row g-4 justify-content-between">
+            <div class="col-lg-4 col-md-6">
+                <a href="/" class="d-flex align-items-center gap-2 text-decoration-none mb-3">
+                    <span class="d-flex align-items-center justify-content-center rounded-3 sp-logo-wrap" style="width: 28px; height: 28px;">
+                        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="width: 16px; height: 16px;">
+                            <defs>
+                                <linearGradient id="footer-g" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#4F6BFF"/>
+                                    <stop offset="1" stop-color="#17B88A"/>
+                                </linearGradient>
+                            </defs>
+                            <rect width="32" height="32" rx="9" fill="url(#footer-g)"/>
+                            <path d="M10 21 16 9l6 12" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="fs-6 fw-bold text-white" style="font-family: var(--font-family-display); letter-spacing: -0.02em;">SpecPilot <span class="text-gradient">AI</span></span>
+                </a>
+                <p class="text-secondary small mb-4" style="line-height: 1.6; max-width: 320px;">
+                    Autonomous 14-stage multi-agent planning workspace generating production-ready architectures, database entities, and API specs.
+                </p>
+                <div class="d-flex gap-3 text-secondary small">
+                    <span><i class="bi bi-shield-check text-accent"></i> Enterprise Grade</span>
+                    <span><i class="bi bi-clock-history text-accent"></i> ISO Blueprint Standards</span>
+                </div>
+            </div>
+            
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <h6 class="text-white small fw-bold text-uppercase mb-3" style="letter-spacing: 0.08em;">Product</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2 small">
+                    <li><a href="/#how-it-works" class="text-decoration-none text-secondary hover-text-white">Workflow Lifecycle</a></li>
+                    <li><a href="/#capabilities" class="text-decoration-none text-secondary hover-text-white">Core Capabilities</a></li>
+                    <li><a href="{% url 'features' %}" class="text-decoration-none text-secondary hover-text-white">Platform Features</a></li>
+                    <li><a href="{% url 'docs' %}" class="text-decoration-none text-secondary hover-text-white">System Documentation</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <h6 class="text-white small fw-bold text-uppercase mb-3" style="letter-spacing: 0.08em;">Legal & Tech</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2 small">
+                    <li><a href="{% url 'privacy' %}" class="text-decoration-none text-secondary hover-text-white">Privacy Policy</a></li>
+                    <li><a href="{% url 'terms' %}" class="text-decoration-none text-secondary hover-text-white">Terms of Service</a></li>
+                    <li><a href="{% url 'about' %}" class="text-decoration-none text-secondary hover-text-white">About Us</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-sm-4 col-md-3 col-lg-2">
+                <h6 class="text-white small fw-bold text-uppercase mb-3" style="letter-spacing: 0.08em;">Environment</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2 small text-secondary">
+                    <li>Django 5.0.x</li>
+                    <li>Gemini 1.5 Pro &amp; Flash</li>
+                    <li>Status: <span class="badge bg-success-glow text-success border-0 px-2 py-1">Operational</span></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-5 pt-4 border-top" style="border-color: rgba(255,255,255,0.05) !important;">
+            <p class="small text-muted mb-0">© 2026 SpecPilot AI Inc. All rights reserved.</p>
+            <p class="small text-muted mb-0">Designed for next-gen software automation.</p>
+        </div>
+    </div>
+</footer>

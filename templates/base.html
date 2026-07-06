@@ -4,26 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SpecPilot AI - AI Software Architect{% endblock %}</title>
-    
-    <!-- Bootstrap 5 CSS -->
+    <meta name="theme-color" content="#08090C">
+    <title>{% block title %}SpecPilot AI — AI Software Architect{% endblock %}</title>
+    <meta name="description" content="SpecPilot AI transforms a simple project idea into complete, production-ready technical documentation using a multi-agent AI planning pipeline.">
+
+    <!-- Preconnects for font performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Favicon (inline gradient mark, no external asset needed) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234F6BFF'/%3E%3Cstop offset='1' stop-color='%2317B88A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Cpath d='M10 21 16 9l6 12' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+    <!-- Bootstrap 5 CSS (grid + utility layer only — all visual components are re-themed) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
-    
-    <!-- Custom Style Sheet -->
+
+    <!-- SpecPilot AI Design System -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
-    
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+    <!-- Premium Startup Splash Sequence (shown once per browser session) -->
+    <div id="sp-splash" aria-hidden="true">
+        <div class="sp-splash-mark">
+            <span class="sp-ring"></span>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 18 12 5l8 13" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="sp-splash-word">SpecPilot <span>AI</span></div>
+        <div class="sp-splash-bar"><div class="sp-splash-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary-light), var(--accent)); transition: width 0.05s ease;"></div></div>
+        <div class="sp-splash-status">Initializing System...</div>
+        <div class="sp-splash-percent">0%</div>
+    </div>
 
     <!-- Premium Toast Notification Engine -->
     <div class="position-fixed top-0 start-50 translate-middle-x p-4" style="z-index: 1090;">
         {% if messages %}
             {% for message in messages %}
-                <div class="toast-alert glass-card p-3 mb-3 d-flex align-items-center gap-3 border-start border-4 {% if message.tags == 'success' %}border-success{% elif message.tags == 'error' %}border-danger{% else %}border-info{% endif %}" style="min-width: 320px; border-radius: 8px;">
+                <div class="toast-alert glass-card p-3 mb-3 d-flex align-items-center gap-3 border-start border-4 {% if message.tags == 'success' %}border-success{% elif message.tags == 'error' %}border-danger{% else %}border-info{% endif %}" style="min-width: 320px;">
                     {% if message.tags == 'success' %}
                         <i class="bi bi-check-circle-fill text-success fs-4"></i>
                     {% elif message.tags == 'error' %}
@@ -43,10 +66,10 @@
     {% if user.is_authenticated %}
         <!-- Sidebar layout -->
         {% include 'partials/sidebar.html' %}
-        
+
         <!-- Navbar Layout -->
         {% include 'partials/navbar.html' %}
-        
+
         <!-- Main content frame -->
         <main class="main-content">
             {% block content %}{% endblock %}
@@ -54,16 +77,23 @@
     {% else %}
         <!-- Authenticated out / Landing layout -->
         {% block auth_content %}
-            {% block landing_content %}{% endblock %}
+            {% include 'partials/public_nav.html' %}
+            
+            <main class="public-main-content">
+                {% block landing_content %}{% endblock %}
+                {% block public_content %}{% endblock %}
+            </main>
+            
+            {% include 'partials/public_footer.html' %}
         {% endblock %}
     {% endif %}
 
     <!-- Bootstrap 5 Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
+
+    <!-- SpecPilot AI Motion & Interaction Engine -->
     <script src="{% static 'js/main.js' %}"></script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

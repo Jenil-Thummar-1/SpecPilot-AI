@@ -1,37 +1,107 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Sign In - SpecPilot AI{% endblock %}
+{% block title %}Sign In — SpecPilot AI{% endblock %}
 
 {% block auth_content %}
-<div class="container min-vh-100 d-flex align-items-center justify-content-center" style="background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%);">
-    <div class="row justify-content-center w-100">
-        <div class="col-md-6 col-lg-4">
-            <div class="glass-panel border-0 text-center p-4 p-md-5">
-                <a href="/" class="d-inline-flex align-items-center gap-2 mb-4 text-decoration-none fs-3 fw-bold text-white" style="font-family: var(--font-family-display); letter-spacing: -0.04em;">
-                    <i class="bi bi-airplane-engines-fill text-primary text-gradient"></i>
-                    <span>SpecPilot <span class="text-gradient">AI</span></span>
-                </a>
-                
-                <h4 class="text-white mb-2 fw-bold" style="letter-spacing: -0.02em;">Welcome Back</h4>
-                <p class="text-secondary small mb-4">Enter credentials to open your development architect workspace.</p>
-                
-                <form method="POST" class="text-start">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label text-secondary small fw-semibold">Username</label>
-                        <input type="text" name="username" class="form-control form-control-custom" placeholder="developer" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label text-secondary small fw-semibold">Password</label>
-                        <input type="password" name="password" class="form-control form-control-custom" placeholder="••••••••" required>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3 fw-bold">Sign In to Workspace</button>
-                </form>
-                
-                <p class="text-secondary small mb-0 mt-2">Don't have a workspace? <a href="{% url 'register' %}" class="text-primary fw-semibold text-decoration-none hover-underline">Create account</a></p>
+<div class="sp-auth-shell min-vh-100 d-flex">
+    <!-- Left Visual Side -->
+    <div class="sp-auth-visual d-none d-lg-flex position-relative flex-grow-1 p-5 d-flex flex-column justify-content-between">
+        <div class="sp-auth-visual-grid"></div>
+        <div class="sp-glow-glow" style="top: 10%; left: 10%;"></div>
+        
+        <a href="/" class="d-inline-flex align-items-center gap-2 text-decoration-none position-relative z-3">
+            <span class="d-flex align-items-center justify-content-center rounded-3 sp-logo-wrap" style="width: 38px; height: 38px;">
+                <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;">
+                    <defs>
+                        <linearGradient id="auth-logo-g" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0" stop-color="#4F6BFF"/>
+                            <stop offset="1" stop-color="#17B88A"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="32" height="32" rx="9" fill="url(#auth-logo-g)"/>
+                    <path d="M10 21 16 9l6 12" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="fs-4 fw-bold text-white" style="font-family: var(--font-family-display);">SpecPilot <span class="text-gradient">AI</span></span>
+        </a>
+
+        <div class="position-relative z-3 mt-auto mb-4">
+            <h2 class="display-3 text-white mb-3" style="font-size: 2.2rem; max-width: 440px; font-family: var(--font-family-display);">Your architect agent has been thinking while you were away.</h2>
+            <p class="text-secondary" style="max-width: 400px; line-height: 1.6;">Pick up planning exactly where you left off — every stage, version, and review is right where you left it.</p>
+        </div>
+
+        <div class="position-relative z-3 d-flex gap-3">
+            <div class="glass-card p-3" style="width: 160px; background: rgba(255,255,255,0.015);">
+                <i class="bi bi-diagram-3-fill text-primary mb-2 d-block fs-4"></i>
+                <span class="small text-secondary" style="font-size: 0.78rem;">15-stage FSM compiler</span>
+            </div>
+            <div class="glass-card p-3" style="width: 160px; background: rgba(255,255,255,0.015);">
+                <i class="bi bi-shield-check text-accent mb-2 d-block fs-4"></i>
+                <span class="small text-secondary" style="font-size: 0.78rem;">Self-graded accuracy</span>
             </div>
         </div>
     </div>
+
+    <!-- Right Form Side -->
+    <div class="sp-auth-form-side d-flex align-items-center justify-content-center p-4 p-md-5">
+        <div class="w-100" style="max-width: 380px;">
+            <!-- Mobile Brand Header -->
+            <a href="/" class="d-lg-none d-inline-flex align-items-center gap-2 mb-4 text-decoration-none fs-4 fw-bold text-white" style="font-family: var(--font-family-display);">
+                <i class="bi bi-airplane-engines-fill text-primary"></i>
+                <span>SpecPilot <span class="text-gradient">AI</span></span>
+            </a>
+
+            <!-- Heading -->
+            <h4 class="text-white mb-2 fw-bold" style="font-family: var(--font-family-display); letter-spacing: -0.01em;">Welcome back</h4>
+            <p class="text-secondary small mb-4">Sign in to open your developer architect workspace.</p>
+
+            <form method="POST" class="text-start" id="loginForm">
+                {% csrf_token %}
+                
+                <!-- Username Field -->
+                <div class="mb-3 form-group-custom">
+                    <label class="form-label text-secondary small fw-semibold">Username</label>
+                    <input type="text" name="username" class="form-control form-control-custom" placeholder="developer" required autofocus>
+                </div>
+                
+                <!-- Password Field -->
+                <div class="mb-4 form-group-custom">
+                    <label class="form-label text-secondary small fw-semibold">Password</label>
+                    <div class="position-relative">
+                        <input type="password" name="password" class="form-control form-control-custom" placeholder="••••••••" required>
+                        <button type="button" class="form-icon-btn sp-pw-toggle" aria-label="Toggle Password Visibility">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="d-flex align-items-center justify-content-between mb-4 small">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label text-secondary" for="rememberMe">
+                            Remember session
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3 fw-bold d-flex align-items-center justify-content-center gap-2" id="submitBtn">
+                    <span>Sign In to Workspace</span> <i class="bi bi-box-arrow-in-right"></i>
+                </button>
+            </form>
+
+            <p class="text-secondary small mb-0 mt-3">Don't have a workspace? <a href="{% url 'register' %}" class="text-primary fw-semibold text-decoration-none hover-underline">Create Account</a></p>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        var btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Initializing session...';
+    });
+</script>
 {% endblock %}
