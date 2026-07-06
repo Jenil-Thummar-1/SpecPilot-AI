@@ -3,7 +3,8 @@ from apps.projects.views import (
     ProjectListView, ProjectCreateView, ProjectDetailView, 
     ProjectUpdateView, ProjectDeleteView, ProjectArchiveView, ProjectUnarchiveView,
     ProjectDuplicateView, ProjectVersionRestoreView, ProjectTimelineView,
-    run_plan_step_view, export_project_view, SeedDemoProjectsView
+    run_plan_step_view, export_project_view, SeedDemoProjectsView,
+    ProjectStepExecuteAJAXView
 )
 
 urlpatterns = [
@@ -26,5 +27,6 @@ urlpatterns = [
     
     # Execution runners
     path('<int:project_id>/step/<int:step_id>/run/', run_plan_step_view, name='run_plan_step'),
+    path('<int:project_id>/step/<int:step_id>/auto-run/', ProjectStepExecuteAJAXView.as_view(), name='run_plan_step_ajax'),
     path('<int:project_id>/export/', export_project_view, name='export_project'),
 ]

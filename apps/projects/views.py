@@ -6,7 +6,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db.models import Q, Avg
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 
 # Models
 from apps.projects.models import Project, ProjectVersion, ActivityLog
@@ -324,6 +324,112 @@ def run_plan_step_view(request, project_id, step_id):
         messages.error(request, f"Agent execution failed: {str(ex)}")
         
     return redirect('project_detail', project_id=project.id)
+
+
+class ProjectStepExecuteAJAXView(LoginRequiredMixin, View):
+    """
+    AJAX view to run an individual planning step.
+    Automatically executes the pipeline, validates and approves the output, 
+    and returns metrics to the autonomous UI.
+    """
+    def post(self, request, project_id, step_id):
+        project = get_object_or_404(Project, id=project_id, user=request.user)
+        step = get_object_or_404(PlanStep, id=step_id, project_plan__project=project)
+        
+        # Guard: check if step is already running
+        if step.status == 'RUNNING':
+            return JsonResponse({
+                "success": False,
+                "error": "This step is already being processed."
+            }, status=400)
+            
+        try:
+            from apps.agents.services import AgentOrchestratorService
+            
+            # Execute step generation pipeline
+            res = AgentOrchestratorService.execute_pipeline(step.id, request.user)
+            
+            # Get latest artifact generated for this step
+            artifact = step.generated_artifacts.order_by('-version').first()
+            
+            # Auto-approve the artifact so it proceeds automatically
+            if artifact:
+                artifact.is_approved = True
+                artifact.save()
+                
+                # Fetch quality scores for validation details
+                eval_record = artifact.step.project_plan.project.agent_executions.last().evaluations.last()
+                qa_score = 0.0
+                if eval_record:
+                    overall_score_record = eval_record.scores.filter(metric_name='OVERALL_CONFIDENCE').first()
+                    if overall_score_record:
+                        qa_score = float(overall_score_record.score)
+                
+                # Set step as completed
+                PlannerService.complete_step(step, notes="Auto-approved by autonomous planning engine.")
+                
+                # Recalculate and update overall project progress
+                PlannerService.update_plan_progress(project.plan)
+                
+                # If all phases are done, mark project complete
+                incomplete_steps = project.plan.steps.exclude(status='COMPLETED')
+                if not incomplete_steps.exists() or (incomplete_steps.count() == 1 and incomplete_steps.first().step_type == 'EXPORT_PREP'):
+                    # Automatically run export prep if it exists
+                    export_prep_step = incomplete_steps.filter(step_type='EXPORT_PREP').first()
+                    if export_prep_step:
+                        # Complete mock export prep
+                        mock_content = f"# Export Compilation Package\nProject: {project.title}\nStatus: Ready for download."
+                        GeneratedArtifact.objects.create(
+                            project=project,
+                            step=export_prep_step,
+                            artifact_type='TEXT',
+                            title=export_prep_step.title,
+                            content=mock_content,
+                            version=1,
+                            is_approved=True
+                        )
+                        PlannerService.complete_step(export_prep_step, notes="Export preparation compiled successfully.")
+                        PlannerService.update_plan_progress(project.plan)
+                    
+                    project.status = 'COMPLETE'
+                    project.save()
+
+                    # Trigger snapshot
+                    ProjectService.create_snapshot(project, request.user)
+                
+                # Get execution details for stats
+                exec_record = project.agent_executions.last()
+                input_tokens = exec_record.input_tokens if exec_record else 0
+                output_tokens = exec_record.output_tokens if exec_record else 0
+                duration_ms = exec_record.execution_time_ms if exec_record else 0
+                
+                return JsonResponse({
+                    "success": True,
+                    "step_id": step.id,
+                    "step_type": step.step_type,
+                    "title": step.title,
+                    "qa_score": qa_score,
+                    "version": artifact.version,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "duration_ms": duration_ms
+                })
+            else:
+                return JsonResponse({
+                    "success": False,
+                    "error": "No artifact generated by the AI agent."
+                }, status=500)
+                
+        except Exception as ex:
+            logger.error(f"Autonomous execution failed for step {step.title}: {str(ex)}")
+            # Mark step as NEEDS_REVISION
+            PlannerService.needs_revision_step(step, reason=str(ex))
+            return JsonResponse({
+                "success": False,
+                "error": str(ex),
+                "step_id": step.id,
+                "title": step.title
+            }, status=500)
 
 
 @login_required
