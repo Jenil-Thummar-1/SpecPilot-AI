@@ -134,10 +134,13 @@ class AgentOrchestratorService:
             skills_list = [skill.code_identifier for skill in skills]
 
             # 8. Assemble execution request metadata (AI-ready configuration)
+            system_prompt_attr = f"SYSTEM_PROMPT_{step.step_type}"
+            system_prompt = getattr(prompts_library, system_prompt_attr, agent.system_prompt)
+
             execution_request = {
                 "agent_name": agent.name,
                 "role": agent.role,
-                "system_prompt": agent.system_prompt,
+                "system_prompt": system_prompt,
                 "prompt": prompt,
                 "temperature": agent.temperature,
                 "max_tokens": agent.max_tokens,
@@ -150,9 +153,10 @@ class AgentOrchestratorService:
             if hasattr(user, 'profile') and user.profile.api_key_override:
                 api_key = user.profile.api_key_override
 
+            from config.ai import ADVANCED_MODEL_NAME
             ai_service = GeminiService(
                 api_key=api_key,
-                model_name="gemini-1.5-flash"
+                model_name=ADVANCED_MODEL_NAME
             )
 
             max_retries = 3
@@ -161,7 +165,7 @@ class AgentOrchestratorService:
                 try:
                     response = ai_service.generate_text(
                         prompt=prompt,
-                        system_instruction=agent.system_prompt,
+                        system_instruction=system_prompt,
                         temperature=agent.temperature
                     )
                     if response.get("success", False):

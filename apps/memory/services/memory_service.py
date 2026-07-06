@@ -41,24 +41,40 @@ class MemoryService:
     @staticmethod
     def load_context(project, limit=10):
         """
-        Assembles recent short-term memories and summaries as a single contextual string.
+        Assembles approved phase specifications, recent short-term memories,
+        and summaries as a single contextual string.
         """
-        session = MemoryService.get_or_create_active_session(project)
+        from apps.generator.models import GeneratedArtifact
+
+        # 1. Load all approved artifacts in order
+        approved_arts = GeneratedArtifact.objects.filter(
+            project=project,
+            is_approved=True
+        ).order_by('step__order')
         
-        # Load summaries or long-term guidance
+        context_parts = []
+        
+        if approved_arts.exists():
+            context_parts.append("--- APPROVED SPECIFICATIONS FROM PREVIOUS PHASES ---")
+            for art in approved_arts:
+                context_parts.append(
+                    f"### Phase {art.step.order if art.step else 'X'}: {art.title}\n"
+                    f"{art.content}\n"
+                )
+            context_parts.append("--- END OF PREVIOUS APPROVED SPECIFICATIONS ---\n")
+
+        # 2. Load summaries or long-term guidance
         long_term_entries = MemoryEntry.objects.filter(
             session__conversation__project=project,
             memory_type__in=[MEMORY_LONG_TERM, MEMORY_SUMMARY]
         ).order_by('-created_at')[:3]
 
-        # Load recent short-term conversation logs
+        # 3. Load recent short-term conversation logs
+        session = MemoryService.get_or_create_active_session(project)
         short_term_entries = MemoryEntry.objects.filter(
             session=session,
             memory_type=MEMORY_SHORT_TERM
         ).order_by('created_at')[:limit]
-
-        # Assemble string representation
-        context_parts = []
         
         if long_term_entries:
             context_parts.append("--- LONG-TERM PROJECT SUMMARIES & DIRECTIVES ---")

@@ -7,8 +7,8 @@ from google import generativeai as genai
 
 # Read settings from environment variables, fallback to defaults
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-DEFAULT_MODEL_NAME = "gemini-1.5-flash"  # Standard high-speed planning model
-ADVANCED_MODEL_NAME = "gemini-1.5-pro"   # Standard high-reasoning architect model
+DEFAULT_MODEL_NAME = "gemini-2.5-flash"  # Standard high-speed planning model
+ADVANCED_MODEL_NAME = "gemini-2.5-pro"   # Standard high-reasoning architect model
 
 # Default safety settings for generation
 SAFETY_SETTINGS = [

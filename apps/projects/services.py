@@ -41,6 +41,35 @@ class ProjectService:
         # 2. Initialize the 15-step workflow
         PlannerService.initialize_plan(project)
 
+        # 2b. Automatically complete Phase 1 (Project Idea) using the user's initial scope description
+        from apps.generator.models import GeneratedArtifact
+        plan = project.plan
+        first_step = plan.steps.filter(step_type="IDEA").first()
+        if first_step:
+            content = (
+                f"# Project Scope Concept: {project.title}\n\n"
+                f"## Elevator Pitch\n{project.short_description or 'No elevator pitch provided.'}\n\n"
+                f"## Detailed Project Scope\n{project.description}\n\n"
+                f"## Target Architecture Model\n"
+                f"- **Target Pattern:** {project.get_target_architecture_display()}\n"
+                f"- **Deployment Target:** {project.deployment_preference}\n"
+            )
+            GeneratedArtifact.objects.create(
+                project=project,
+                step=first_step,
+                artifact_type='MARKDOWN',
+                title=first_step.title,
+                content=content,
+                version=1,
+                is_approved=True
+            )
+            first_step.status = 'COMPLETED'
+            first_step.progress_pct = 100.0
+            first_step.completed_at = timezone.now()
+            first_step.notes = "Project scope initialized."
+            first_step.save()
+            PlannerService.update_plan_progress(plan)
+
         # 3. Create active workspace session memory logs if not present
         from apps.memory.services.memory_service import MemoryService
         MemoryService.save_memory(
