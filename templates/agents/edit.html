@@ -5,12 +5,12 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="glass-panel border-0">
-            <h4 class="text-white mb-3 fw-bold">Configure AI Agent Settings</h4>
-            <p class="text-secondary small mb-5">Edit parameters, system instructions, and assign tools to adjust the agent's behavior during workflow runs.</p>
+    <div class="col-lg-8 col-xl-7">
+        <div class="glass-panel border-0 p-4 p-md-5">
+            <h4 class="text-white mb-2 fw-bold" style="letter-spacing: -0.02em;">Configure AI Agent Settings</h4>
+            <p class="text-secondary small mb-4">Edit parameters, system instructions, and assign tools to adjust the agent's behavior during workflow runs.</p>
             
-            <form method="POST">
+            <form method="POST" class="mt-4">
                 {% csrf_token %}
                 <div class="row g-4">
                     <!-- Name -->
@@ -67,15 +67,15 @@
 
                     <!-- Active Switch -->
                     <div class="col-12">
-                        <div class="form-check form-switch glass-card p-2.5 border-0 d-flex align-items-center gap-3" style="background: rgba(255,255,255,0.015);">
-                            <input class="form-check-input ms-0 mt-0" type="checkbox" name="is_active" id="agentIsActive" {% if agent.is_active %}checked{% endif %}>
-                            <label class="form-check-label small text-secondary fw-semibold cursor-pointer" for="agentIsActive">Agent is Active & Online</label>
+                        <div class="form-check form-switch glass-card p-3 border-0 d-flex align-items-center gap-3" style="background: rgba(255,255,255,0.015);">
+                            <input class="form-check-input ms-0 mt-0" type="checkbox" name="is_active" id="agentIsActive" {% if agent.is_active %}checked{% endif %} style="cursor: pointer;">
+                            <label class="form-check-label small text-secondary fw-semibold cursor-pointer mb-0" for="agentIsActive">Agent is Active & Online</label>
                         </div>
                     </div>
 
                     <!-- Skills selection -->
-                    <div class="col-12">
-                        <label class="form-label text-secondary small fw-semibold">Assigned AI Skills Capabilities</label>
+                    <div class="col-12 border-top pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                        <label class="form-label text-white fw-bold mb-3" style="font-size: 0.95rem;">Assigned AI Skills Capabilities</label>
                         <div class="row g-2">
                             {% for skill in skills_choices %}
                                 <div class="col-md-6">
@@ -88,15 +88,15 @@
                                     </div>
                                 </div>
                             {% empty %}
-                                <div class="col-12 text-muted small">No custom skills created yet. <a href="{% url 'skill_create' %}">Create first skill</a></div>
+                                <div class="col-12 text-muted small">No custom skills created yet. <a href="{% url 'skill_create' %}" class="text-primary text-decoration-none">Create first skill</a></div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
-                    <a href="{% url 'agent_list' %}" class="btn btn-outline-secondary border-0">Cancel</a>
-                    <button type="submit" class="btn btn-primary-custom px-4 py-2.5">
+                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                    <a href="{% url 'agent_list' %}" class="btn btn-secondary-custom px-4 py-2 border-0">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom px-4 py-2">
                         Save Configurations
                     </button>
                 </div>

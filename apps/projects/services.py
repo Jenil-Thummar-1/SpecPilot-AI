@@ -260,6 +260,53 @@ class ProjectService:
         ProjectService.create_snapshot(project, user)
         return project
 
+    @staticmethod
+    def create_snapshot(project, user):
+        """
+        Helper that compiles and serializes all project and workflow states into a ProjectVersion snapshot record.
+        """
+        plan = getattr(project, 'plan', None)
+        steps_list = []
+        if plan:
+            for step in plan.steps.all():
+                steps_list.append({
+                    "step_type": step.step_type,
+                    "title": step.title,
+                    "description": step.description,
+                    "order": step.order,
+                    "status": step.status,
+                    "progress_pct": float(step.progress_pct),
+                    "notes": step.notes or "",
+                    "dependencies_str": step.dependencies_str,
+                    "metadata": step.metadata or {}
+                })
+
+        snapshot_data = {
+            "title": project.title,
+            "short_description": project.short_description,
+            "description": project.description,
+            "category": project.category,
+            "target_users": project.target_users,
+            "tech_stack": project.tech_stack,
+            "target_architecture": project.target_architecture,
+            "deployment_preference": project.deployment_preference,
+            "status": project.status,
+            "plan_current_step_index": plan.current_step_index if plan else 0,
+            "plan_overall_progress_pct": float(plan.overall_progress_pct) if plan else 0.0,
+            "steps": steps_list
+        }
+
+        # Check if version already exists to avoid integrity errors
+        existing_version = ProjectVersion.objects.filter(project=project, version_number=project.current_version).first()
+        if existing_version:
+            existing_version.title = project.title
+            existing_version.short_description = project.short_description
+            existing_version.description = project.description
+            existing_version.snapshot_data = snapshot_data
+            existing_version.save()
+            logger.info(f"Version snapshot {project.current_version} updated for Project '{project.title}'")
+            return existing_version
+
         version_record = ProjectVersion.objects.create(
             project=project,
             version_number=project.current_version,
@@ -271,6 +318,7 @@ class ProjectService:
         )
         logger.info(f"Version snapshot {project.current_version} created for Project '{project.title}'")
         return version_record
+
 
     @classmethod
     @transaction.atomic

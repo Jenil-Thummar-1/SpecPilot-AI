@@ -168,3 +168,19 @@ class PlannerService:
             "estimated_remaining_minutes": remaining_minutes,
             "active_stage": active_stage_title
         }
+
+    @staticmethod
+    def update_plan_progress(plan):
+        """
+        Recalculates plan's overall progress percentage and updates the record.
+        """
+        total_steps = plan.steps.count()
+        completed_steps = plan.steps.filter(status='COMPLETED').count()
+        
+        if total_steps > 0:
+            plan.overall_progress_pct = (completed_steps / total_steps) * 100
+        else:
+            plan.overall_progress_pct = 0.0
+        plan.save()
+        logger.info(f"Plan progress recalculated: {plan.overall_progress_pct}%")
+

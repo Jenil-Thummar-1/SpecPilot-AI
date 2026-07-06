@@ -5,28 +5,30 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-9">
-        <div class="glass-panel border-0">
-            <h3 class="text-white fw-bold mb-3">About SpecPilot AI</h3>
-            <p class="text-secondary mb-5" style="text-align: justify;">SpecPilot AI is an enterprise-grade Autonomous AI Project Architect Platform designed to transform raw software ideas into production-ready specifications, code frameworks, and deployment blueprints. By utilizing specialized agent role execution workflows, SpecPilot AI acts as a digital software architect, product planner, technical writer, and quality assurance analyst to construct complete blueprints sequentially.</p>
+    <div class="col-lg-9 col-xl-8">
+        <div class="glass-panel border-0 p-4 p-md-5">
+            <h3 class="text-white fw-bold mb-3" style="letter-spacing: -0.03em;">About SpecPilot AI</h3>
+            <p class="text-secondary mb-4" style="text-align: justify; line-height: 1.6; font-size: 0.95rem;">
+                SpecPilot AI is an enterprise-grade Autonomous AI Project Architect Platform designed to transform raw software ideas into production-ready specifications, code frameworks, and deployment blueprints. By utilizing specialized agent role execution workflows, SpecPilot AI acts as a digital software architect, product planner, technical writer, and quality assurance analyst to construct complete blueprints sequentially.
+            </p>
             
-            <div class="row g-4">
+            <div class="row g-4 mt-2">
                 <div class="col-md-6">
-                    <div class="glass-card p-3 border-0 h-100" style="background: rgba(255,255,255,0.015);">
-                        <h6 class="text-primary fw-bold mb-2">Our Vision</h6>
-                        <p class="text-secondary small mb-0">Democratize software engineering processes by allowing founders, product managers, and developers to align technical architectures and databases dynamically using LLMs.</p>
+                    <div class="glass-card p-4 border-0 h-100" style="background: rgba(255,255,255,0.015);">
+                        <h6 class="text-primary fw-bold mb-2" style="font-size: 0.95rem;"><i class="bi bi-eye-fill me-2"></i>Our Vision</h6>
+                        <p class="text-secondary small mb-0" style="line-height: 1.5;">Democratize software engineering processes by allowing founders, product managers, and developers to align technical architectures and databases dynamically using LLMs.</p>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="glass-card p-3 border-0 h-100" style="background: rgba(255,255,255,0.015);">
-                        <h6 class="text-accent fw-bold mb-2">Platform Goals</h6>
-                        <p class="text-secondary small mb-0">Construct precise, structured, and auditable specifications with AI evaluation checkpoints, multi-version snapshots history, and instant developer guides export packages.</p>
+                    <div class="glass-card p-4 border-0 h-100" style="background: rgba(255,255,255,0.015);">
+                        <h6 class="text-accent fw-bold mb-2" style="font-size: 0.95rem;"><i class="bi bi-shield-check me-2"></i>Platform Goals</h6>
+                        <p class="text-secondary small mb-0" style="line-height: 1.5;">Construct precise, structured, and auditable specifications with AI evaluation checkpoints, multi-version snapshots history, and instant developer guides export packages.</p>
                     </div>
                 </div>
             </div>
             
-            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
-                <a href="{% url 'dashboard' %}" class="btn btn-primary-custom px-4 py-2">Back to Dashboard</a>
+            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom px-4 py-2 border-0">Back to Dashboard</a>
             </div>
         </div>
     </div>

@@ -5,40 +5,52 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-9">
-        <div class="glass-panel border-0">
-            <h3 class="text-white fw-bold mb-3">Enterprise Architectural Features</h3>
+    <div class="col-lg-9 col-xl-8">
+        <div class="glass-panel border-0 p-4 p-md-5">
+            <h3 class="text-white fw-bold mb-3" style="letter-spacing: -0.03em;">Enterprise Architectural Features</h3>
             <p class="text-secondary mb-5">Explore the deep planning features powering SpecPilot AI workspace pipelines.</p>
 
             <div class="row g-4 mb-4">
                 <div class="col-md-6">
-                    <div class="glass-card p-3 border-0 h-100" style="background: rgba(255,255,255,0.015);">
-                        <h6 class="text-primary fw-bold mb-2"><i class="bi bi-diagram-3-fill me-2"></i> 15-Stage FSM Planner Workflow</h6>
-                        <p class="text-secondary small mb-0">From raw scopes and product roadmaps to API specs and codebase folder structures, every stage runs in sequence enforcing architectural dependency alignments.</p>
+                    <div class="glass-card p-4 border-0 h-100" style="background: rgba(255,255,255,0.015);">
+                        <h6 class="text-primary fw-bold mb-2 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                            <i class="bi bi-diagram-3-fill"></i> 
+                            15-Stage FSM Planner
+                        </h6>
+                        <p class="text-secondary small mb-0" style="line-height: 1.5;">From raw scopes and product roadmaps to API specs and codebase folder structures, every stage runs in sequence enforcing architectural dependency alignments.</p>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="glass-card p-3 border-0 h-100" style="background: rgba(255,255,255,0.015);">
-                        <h6 class="text-accent fw-bold mb-2"><i class="bi bi-clock-history me-2"></i> Revisions & Version Rollbacks</h6>
-                        <p class="text-secondary small mb-0">Every manual update or retry execution spawns incremented snapshot versions. Restore any workspace version to retrieve previous draft specifications.</p>
+                    <div class="glass-card p-4 border-0 h-100" style="background: rgba(255,255,255,0.015);">
+                        <h6 class="text-accent fw-bold mb-2 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                            <i class="bi bi-clock-history"></i> 
+                            Version Snapshots
+                        </h6>
+                        <p class="text-secondary small mb-0" style="line-height: 1.5;">Every manual update or retry execution spawns incremented snapshot versions. Restore any workspace version to retrieve previous draft specifications.</p>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="glass-card p-3 border-0 h-100" style="background: rgba(255,255,255,0.015);">
-                        <h6 class="text-success fw-bold mb-2"><i class="bi bi-shield-check me-2"></i> 10-Metric Compliance Guard</h6>
-                        <p class="text-secondary small mb-0">Auto-scores generated texts against readability, security coverage, technical accuracy, testing setups, and implementation readiness metrics.</p>
+                    <div class="glass-card p-4 border-0 h-100" style="background: rgba(255,255,255,0.015);">
+                        <h6 class="text-success fw-bold mb-2 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                            <i class="bi bi-shield-check"></i> 
+                            Compliance Guard
+                        </h6>
+                        <p class="text-secondary small mb-0" style="line-height: 1.5;">Auto-scores generated texts against readability, security coverage, technical accuracy, testing setups, and implementation readiness metrics.</p>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="glass-card p-3 border-0 h-100" style="background: rgba(255,255,255,0.015);">
-                        <h6 class="text-warning fw-bold mb-2"><i class="bi bi-file-earmark-arrow-down me-2"></i> Multi-Format Export Center</h6>
-                        <p class="text-secondary small mb-0">Instantly compile and export unified developer blueprints as clean Markdown files, structured JSON data, professional PDFs, or complete ZIP packages.</p>
+                    <div class="glass-card p-4 border-0 h-100" style="background: rgba(255,255,255,0.015);">
+                        <h6 class="text-warning fw-bold mb-2 d-flex align-items-center gap-2" style="font-size: 0.95rem;">
+                            <i class="bi bi-file-earmark-arrow-down"></i> 
+                            Multi-Format Export
+                        </h6>
+                        <p class="text-secondary small mb-0" style="line-height: 1.5;">Instantly compile and export unified developer blueprints as clean Markdown files, structured JSON data, professional PDFs, or complete ZIP packages.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
-                <a href="{% url 'dashboard' %}" class="btn btn-primary-custom px-4 py-2">Back to Dashboard</a>
+            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom px-4 py-2 border-0">Back to Dashboard</a>
             </div>
         </div>
     </div>

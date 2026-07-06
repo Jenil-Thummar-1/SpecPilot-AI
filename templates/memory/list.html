@@ -5,31 +5,31 @@
 
 {% block content %}
 <div class="glass-card p-4 border-0 mb-4">
-    <h5 class="text-white fw-bold mb-2">Workspace Memory Contexts</h5>
+    <h5 class="text-white fw-bold mb-2" style="letter-spacing: -0.015em;">Workspace Memory Contexts</h5>
     <p class="text-secondary small mb-0">SpecPilot AI keeps context isolated by projects, tracking short-term interaction logs, consolidated summaries, and long-term directives.</p>
 </div>
 
 {% if projects %}
-    <div class="row g-4">
+    <div class="row g-3">
         {% for project in projects %}
             <div class="col-md-6 col-lg-4">
-                <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.015);">
+                <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.012); border: 1px solid rgba(255,255,255,0.02) !important;">
                     <div>
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <span class="badge bg-primary-glow text-primary text-uppercase">{{ project.get_category_display }}</span>
-                            <span class="small text-muted" style="font-size: 0.75rem;">v{{ project.current_version }}</span>
+                            <span class="badge bg-primary-glow text-primary text-uppercase" style="font-size: 0.68rem;">{{ project.get_category_display }}</span>
+                            <span class="small text-muted" style="font-size: 0.72rem;">v{{ project.current_version }}</span>
                         </div>
                         <h5 class="text-white fw-bold mb-2">
-                            <a href="{% url 'memory_detail' project.id %}" class="text-decoration-none text-white hover-text-primary">{{ project.title }}</a>
+                            <a href="{% url 'memory_detail' project.id %}" class="text-decoration-none text-white hover-text-primary" style="font-size: 0.95rem; letter-spacing: -0.01em;">{{ project.title }}</a>
                         </h5>
-                        <p class="text-secondary small mb-4">{{ project.short_description|truncatechars:100 }}</p>
+                        <p class="text-secondary small mb-4" style="line-height: 1.45; opacity: 0.85;">{{ project.short_description|truncatechars:100 }}</p>
                     </div>
 
                     <div>
                         <!-- Memory metrics stats -->
-                        <div class="border-top pt-3 mb-3" style="border-color: rgba(255,255,255,0.05); font-size: 0.8rem;">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Conversations Sessions:</span>
+                        <div class="border-top pt-3 mb-3" style="border-color: rgba(255,255,255,0.06) !important; font-size: 0.78rem;">
+                            <div class="d-flex justify-content-between mb-1.5">
+                                <span class="text-muted">Conversation Sessions:</span>
                                 <span class="text-white fw-semibold">
                                     {% if project.conversation %}
                                         {{ project.conversation.sessions.count }}
@@ -52,7 +52,7 @@
 
                         <!-- Open Detail Link -->
                         <a href="{% url 'memory_detail' project.id %}" class="btn btn-sm btn-primary-custom w-100 py-2">
-                            <i class="bi bi-eye-fill me-1"></i> View Context Records
+                            <i class="bi bi-eye-fill me-1.5"></i> View Context Records
                         </a>
                     </div>
                 </div>
@@ -61,10 +61,10 @@
     </div>
 {% else %}
     <div class="text-center py-5 glass-card border-0">
-        <i class="bi bi-database-fill text-muted fs-1 mb-3 block"></i>
-        <h5 class="text-white">No active workspaces.</h5>
-        <p class="text-secondary small">Launch a project to initialize memory sessions.</p>
-        <a href="{% url 'project_create' %}" class="btn btn-primary-custom mt-2">Create Project</a>
+        <i class="bi bi-database-fill text-muted fs-1 mb-3 d-block"></i>
+        <h5 class="text-white fw-bold">No active workspaces</h5>
+        <p class="text-secondary small mb-3">Launch a project to initialize memory sessions.</p>
+        <a href="{% url 'project_create' %}" class="btn btn-primary-custom">Create Project</a>
     </div>
 {% endif %}
 {% endblock %}

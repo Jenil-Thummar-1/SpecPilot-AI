@@ -5,12 +5,12 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="glass-panel border-0">
-            <h4 class="text-white mb-3 fw-bold">Register Specialized AI Agent</h4>
-            <p class="text-secondary small mb-5">Set system directives, creative temperatures, token limits, and assign skills capabilities to this agent.</p>
+    <div class="col-lg-8 col-xl-7">
+        <div class="glass-panel border-0 p-4 p-md-5">
+            <h4 class="text-white mb-2 fw-bold" style="letter-spacing: -0.02em;">Register Specialized AI Agent</h4>
+            <p class="text-secondary small mb-4">Set system directives, creative temperatures, token limits, and assign skills capabilities to this agent.</p>
             
-            <form method="POST">
+            <form method="POST" class="mt-4">
                 {% csrf_token %}
                 <div class="row g-4">
                     <!-- Name -->
@@ -32,13 +32,13 @@
                     <!-- Description -->
                     <div class="col-12">
                         <label class="form-label text-secondary small fw-semibold">Description</label>
-                        <input type="text" name="description" class="form-control form-control-custom" placeholder="E.g. Technical writer focused on compiling Product Requirements Documents (PRDs)." required>
+                        <input type="text" name="description" class="form-control form-control-custom" placeholder="E.g. Technical writer focused on PRDs." required>
                     </div>
 
                     <!-- System Prompt -->
                     <div class="col-12">
                         <label class="form-label text-secondary small fw-semibold">System Prompt Directive</label>
-                        <textarea name="system_prompt" rows="5" class="form-control form-control-custom" placeholder="You are a senior system technical writer. Write specifications matching OWASP guidelines..." required></textarea>
+                        <textarea name="system_prompt" rows="5" class="form-control form-control-custom" placeholder="You are a senior system architect..." required></textarea>
                     </div>
 
                     <!-- Temperature -->
@@ -63,12 +63,12 @@
                     <div class="col-12">
                         <label class="form-label text-secondary small fw-semibold">Config Settings (JSON Schema Overrides)</label>
                         <textarea name="config_settings" rows="3" class="form-control form-control-custom">{}</textarea>
-                        <div class="form-text text-muted">Advanced overrides such as custom safety layers threshold configurations. Must be valid JSON.</div>
+                        <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">Advanced overrides such as custom safety layers. Must be valid JSON.</div>
                     </div>
 
                     <!-- Skills selection -->
-                    <div class="col-12">
-                        <label class="form-label text-secondary small fw-semibold">Assigned AI Skills Capabilities</label>
+                    <div class="col-12 border-top pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                        <label class="form-label text-white fw-bold mb-3" style="font-size: 0.95rem;">Assigned AI Skills Capabilities</label>
                         <div class="row g-2">
                             {% for skill in skills_choices %}
                                 <div class="col-md-6">
@@ -80,15 +80,15 @@
                                     </div>
                                 </div>
                             {% empty %}
-                                <div class="col-12 text-muted small">No custom skills created yet. <a href="{% url 'skill_create' %}">Create first skill</a></div>
+                                <div class="col-12 text-muted small">No custom skills created yet. <a href="{% url 'skill_create' %}" class="text-primary text-decoration-none">Create first skill</a></div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
-                    <a href="{% url 'agent_list' %}" class="btn btn-outline-secondary border-0">Cancel</a>
-                    <button type="submit" class="btn btn-primary-custom px-4 py-2.5">
+                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                    <a href="{% url 'agent_list' %}" class="btn btn-secondary-custom px-4 py-2 border-0">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom px-4 py-2">
                         Register Agent
                     </button>
                 </div>

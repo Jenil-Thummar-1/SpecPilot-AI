@@ -4,72 +4,51 @@
 {% block page_title %}Projects Library{% endblock %}
 
 {% block content %}
-<!-- Project Statistics Grid -->
-<div class="row g-4 mb-4">
-    <div class="col-md-2.4 col-lg-2.4 col-sm-6 flex-fill">
-        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Total Projects</span>
-                <h4 class="mb-0 fw-bold text-white">{{ stats.total }}</h4>
+<!-- Collapsible Workspace Statistics (For Power Users) -->
+<details class="glass-card p-4 mb-4 border-0">
+    <summary class="d-flex align-items-center justify-content-between text-white fw-bold small" style="cursor: pointer; user-select: none;">
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-bar-chart-fill text-primary"></i> 
+            Workspace Metrics
+        </span>
+        <i class="bi bi-chevron-down summary-arrow text-muted"></i>
+    </summary>
+    
+    <div class="row g-3 mt-3 pt-3 border-top" style="border-color: rgba(255, 255, 255, 0.06) !important;">
+        <div class="col-sm-6 col-md-3">
+            <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03);">
+                <span class="text-secondary small text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Total Workspaces</span>
+                <h5 class="mb-0 fw-bold text-white">{{ stats.total }}</h5>
             </div>
-            <div class="rounded bg-primary-glow p-2.5">
-                <i class="bi bi-folder-fill text-primary fs-5"></i>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03);">
+                <span class="text-secondary small text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Planning Stages</span>
+                <h5 class="mb-0 fw-bold text-white">{{ stats.planning }}</h5>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03);">
+                <span class="text-secondary small text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Approved Blueprints</span>
+                <h5 class="mb-0 fw-bold text-white">{{ stats.completed }}</h5>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03);">
+                <span class="text-secondary small text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Average Progress</span>
+                <h5 class="mb-0 fw-bold text-white">{{ stats.avg_progress|floatformat:0 }}%</h5>
             </div>
         </div>
     </div>
-    <div class="col-md-2.4 col-lg-2.4 col-sm-6 flex-fill">
-        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Planning Stages</span>
-                <h4 class="mb-0 fw-bold text-white">{{ stats.planning }}</h4>
-            </div>
-            <div class="rounded bg-accent-glow p-2.5" style="background: rgba(234, 179, 8, 0.1);">
-                <i class="bi bi-clock-history text-warning fs-5"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2.4 col-lg-2.4 col-sm-6 flex-fill">
-        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Completed Specifications</span>
-                <h4 class="mb-0 fw-bold text-white">{{ stats.completed }}</h4>
-            </div>
-            <div class="rounded bg-primary-glow p-2.5" style="background: rgba(16, 185, 129, 0.1);">
-                <i class="bi bi-patch-check-fill text-success fs-5"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2.4 col-lg-2.4 col-sm-6 flex-fill">
-        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Archived Blueprints</span>
-                <h4 class="mb-0 fw-bold text-white">{{ stats.archived }}</h4>
-            </div>
-            <div class="rounded bg-accent-glow p-2.5" style="background: rgba(107, 114, 128, 0.15);">
-                <i class="bi bi-archive-fill text-secondary fs-5"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-2.4 col-lg-2.4 col-sm-6 flex-fill">
-        <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Average Progress</span>
-                <h4 class="mb-0 fw-bold text-white">{{ stats.avg_progress|floatformat:1 }}%</h4>
-            </div>
-            <div class="rounded bg-primary-glow p-2.5">
-                <i class="bi bi-graph-up-arrow text-primary fs-5"></i>
-            </div>
-        </div>
-    </div>
-</div>
+</details>
 
 <!-- Search, Filters, and Sorting Controls -->
-<div class="glass-card p-3 mb-4 border-0">
+<div class="glass-card p-4 mb-4 border-0">
     <form method="GET" class="row g-3">
         <!-- Search bar -->
         <div class="col-lg-4">
             <div class="input-group">
-                <span class="input-group-text bg-transparent border-end-0" style="border-color: var(--card-border);"><i class="bi bi-search text-secondary"></i></span>
+                <span class="input-group-text bg-transparent border-end-0" style="border-color: rgba(255, 255, 255, 0.05);"><i class="bi bi-search text-secondary"></i></span>
                 <input type="text" name="search" class="form-control form-control-custom ps-0 border-start-0" placeholder="Search project title or ideas..." value="{{ active_search }}">
             </div>
         </div>
@@ -115,80 +94,83 @@
         </div>
 
         <!-- Filter triggers -->
-        <div class="col-12 d-flex gap-2 justify-content-end">
-            <a href="{% url 'project_list' %}" class="btn btn-sm btn-outline-secondary border-0 d-flex align-items-center">Reset</a>
-            <button type="submit" class="btn btn-sm btn-primary-custom px-4">Apply Filters</button>
+        <div class="col-12 d-flex gap-2 justify-content-end align-items-center mt-3">
+            <a href="{% url 'project_list' %}" class="btn btn-secondary-custom border-0 py-1.5 px-3 d-flex align-items-center text-decoration-none">Reset</a>
+            <button type="submit" class="btn btn-primary-custom py-1.5 px-4">Apply Filters</button>
         </div>
     </form>
 </div>
 
 <!-- Project Cards Grid -->
 {% if projects %}
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         {% for project in projects %}
             <div class="col-md-6 col-lg-4">
-                <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.015);">
+                <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.012);">
                     <div>
                         <!-- Header metadata -->
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <span class="badge bg-primary-glow text-primary" style="font-size: 0.75rem;">{{ project.get_category_display|truncatechars:20 }}</span>
-                            <span class="badge {% if project.status == 'COMPLETE' %}bg-success{% elif project.status == 'PLANNING' %}bg-warning{% elif project.status == 'ARCHIVED' %}bg-secondary{% else %}bg-secondary{% endif %}-glow text-white">
+                            <span class="badge bg-primary-glow text-primary" style="font-size: 0.7rem;">{{ project.get_category_display|truncatechars:20 }}</span>
+                            <span class="badge {% if project.status == 'COMPLETE' %}bg-success-glow text-success{% elif project.status == 'PLANNING' %}bg-warning-glow text-warning{% elif project.status == 'ARCHIVED' %}bg-secondary-glow text-secondary{% else %}bg-secondary-glow text-secondary{% endif %}">
                                 {{ project.get_status_display }}
                             </span>
                         </div>
                         
                         <!-- Title & Pitches -->
                         <h5 class="text-white fw-bold mb-2">
-                            <a href="{% url 'project_detail' project.id %}" class="text-decoration-none text-white hover-text-primary">{{ project.title }}</a>
+                            <a href="{% url 'project_detail' project.id %}" class="text-decoration-none text-white hover-text-primary" style="letter-spacing: -0.015em;">{{ project.title }}</a>
                         </h5>
-                        <p class="text-secondary small mb-1"><strong>Pitch:</strong> {{ project.short_description|default:"No elevator pitch provided." }}</p>
-                        <p class="text-secondary small mb-4">{{ project.description|truncatewords:15 }}</p>
+                        <p class="text-secondary small mb-2" style="font-size: 0.82rem; line-height: 1.4;"><strong>Pitch:</strong> {{ project.short_description|default:"No elevator pitch provided." }}</p>
+                        <p class="text-secondary small mb-4" style="font-size: 0.82rem; line-height: 1.4; opacity: 0.85;">{{ project.description|truncatewords:15 }}</p>
                     </div>
 
                     <div>
                         <!-- Progress meters -->
-                        <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.8rem;">
+                        <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.78rem;">
                             <span class="text-muted">Workflow Progress</span>
                             <span class="fw-bold text-white">{{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%</span>
                         </div>
-                        <div class="progress mb-4" style="height: 6px; background: var(--card-border);">
-                            <div class="progress-bar bg-primary" role="progressbar" style="--progress-width: {{ project.plan.overall_progress_pct|default:0|floatformat:0 }}%; width: var(--progress-width);"></div>
+                        <div class="progress mb-4" style="height: 5px; background: rgba(255,255,255,0.03);">
+                            <div class="progress-bar" role="progressbar" data-progress="{{ project.plan.overall_progress_pct|default:0|floatformat:0 }}"></div>
                         </div>
 
                         <!-- Active health metrics -->
-                        <div class="d-flex align-items-center justify-content-between border-top pt-3 mb-3" style="border-color: rgba(255,255,255,0.05); font-size: 0.75rem;">
+                        <div class="d-flex align-items-center justify-content-between border-top pt-3 mb-3" style="border-color: rgba(255,255,255,0.05); font-size: 0.78rem;">
                             <span class="text-muted">Target Arch:</span>
                             <span class="text-white fw-semibold">{{ project.get_target_architecture_display }}</span>
                         </div>
                         
                         <!-- Quick actions footer -->
                         <div class="d-flex align-items-center gap-2 justify-content-between">
-                            <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-outline-primary border-0 p-1" title="Open Detail">
-                                <i class="bi bi-folder-symlink fs-5"></i>
-                            </a>
-                            <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-secondary border-0 p-1" title="Edit Settings">
-                                <i class="bi bi-pencil-square fs-5"></i>
+                            <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary-custom px-3 py-2 small">
+                                <i class="bi bi-folder2-open me-1"></i> Open Canvas
                             </a>
                             
-                            <form method="POST" action="{% url 'project_duplicate' project.id %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-secondary border-0 p-1" title="Duplicate Copy">
-                                    <i class="bi bi-copy fs-5"></i>
-                                </button>
-                            </form>
-                            
-                            {% if project.status != 'ARCHIVED' %}
-                                <form method="POST" action="{% url 'project_archive' project.id %}" class="d-inline">
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-secondary border-0 p-1.5" title="Edit Settings">
+                                    <i class="bi bi-pencil-square fs-6"></i>
+                                </a>
+                                
+                                <form method="POST" action="{% url 'project_duplicate' project.id %}" class="d-inline m-0">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-warning border-0 p-1" title="Archive project">
-                                        <i class="bi bi-archive fs-5"></i>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary border-0 p-1.5" title="Duplicate Copy">
+                                        <i class="bi bi-copy fs-6"></i>
                                     </button>
                                 </form>
-                            {% endif %}
-                            
-                            <a href="{% url 'project_delete' project.id %}" class="btn btn-sm btn-outline-danger border-0 p-1" title="Delete Project">
-                                <i class="bi bi-trash fs-5"></i>
-                            </a>
+                                
+                                {% if project.status != 'ARCHIVED' %}
+                                    <form method="POST" action="{% url 'project_archive' project.id %}" class="d-inline m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-warning border-0 p-1.5" title="Archive Project">
+                                            <i class="bi bi-archive fs-6"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                
+                                <a href="{% url 'project_delete' project.id %}" class="btn btn-sm btn-outline-danger border-0 p-1.5" title="Delete Project">
+                                    <i class="bi bi-trash fs-6"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -222,15 +204,15 @@
     {% endif %}
 {% else %}
     <div class="text-center py-5 glass-card border-0">
-        <i class="bi bi-search text-muted fs-1 mb-3 block"></i>
-        <h5 class="text-white">No projects found.</h5>
-        <p class="text-secondary small mb-3">Clear filters, create a project, or initialize pre-completed demo workspaces.</p>
+        <i class="bi bi-search text-muted fs-1 mb-3 d-block"></i>
+        <h5 class="text-white fw-bold">No projects found</h5>
+        <p class="text-secondary small mb-4">Clear filters, create a project, or initialize pre-completed demo workspaces.</p>
         <div class="d-flex gap-3 justify-content-center">
             <a href="{% url 'project_create' %}" class="btn btn-primary-custom">Create New Project</a>
-            <form method="POST" action="{% url 'project_seed_demo' %}">
+            <form method="POST" action="{% url 'project_seed_demo' %}" class="m-0">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline-primary border-0 glass-card">
-                    <i class="bi bi-cloud-download me-1"></i> Load Demo Workspaces
+                <button type="submit" class="btn btn-secondary-custom border-0">
+                    <i class="bi bi-cloud-download me-1.5"></i> Load Demo Workspaces
                 </button>
             </form>
         </div>

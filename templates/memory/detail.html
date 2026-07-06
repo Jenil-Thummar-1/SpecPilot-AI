@@ -8,30 +8,30 @@
     <!-- Left Column: Context Search Query -->
     <div class="col-lg-4">
         <div class="glass-card p-4 mb-4 border-0">
-            <h5 class="text-white fw-bold mb-1">Context Query Tool</h5>
-            <p class="text-secondary small mb-4">Simulate Agent query retrieval. Search keyword patterns in database to fetch relevant context segments.</p>
+            <h5 class="text-white fw-bold mb-2" style="font-size: 0.95rem; letter-spacing: -0.010em;">Context Query Tool</h5>
+            <p class="text-secondary small mb-4" style="line-height: 1.45;">Simulate Agent query retrieval. Search keyword patterns in database to fetch relevant context segments.</p>
             
-            <form method="GET" class="mb-4">
+            <form method="GET" class="mb-3 m-0">
                 <div class="input-group mb-3">
                     <input type="text" name="query" class="form-control form-control-custom" placeholder="Search keywords..." value="{{ query }}">
                     <button class="btn btn-primary-custom" type="submit"><i class="bi bi-search"></i></button>
                 </div>
                 {% if query %}
-                    <a href="{% url 'memory_detail' project.id %}" class="btn btn-sm btn-outline-secondary w-100 border-0">Reset Search</a>
+                    <a href="{% url 'memory_detail' project.id %}" class="btn btn-sm btn-secondary-custom w-100 border-0 text-decoration-none d-flex align-items-center justify-content-center">Reset Search</a>
                 {% endif %}
             </form>
 
             {% if query %}
-                <h6 class="text-white fw-bold small mb-3">Matching Context Blocks (Semantic Mock)</h6>
+                <h6 class="text-white fw-bold small mb-3 mt-4" style="font-size: 0.82rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted) !important;">Matching Context Blocks</h6>
                 {% if retrieved %}
                     <div class="d-flex flex-column gap-2" style="max-height: 350px; overflow-y: auto;">
                         {% for entry in retrieved %}
                             <div class="p-2.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border); font-size: 0.75rem;">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="badge bg-primary-glow text-primary text-uppercase">{{ entry.role }}</span>
+                                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                    <span class="badge bg-primary-glow text-primary text-uppercase" style="font-size: 0.65rem;">{{ entry.role }}</span>
                                     <span class="text-muted" style="font-size: 0.65rem;">Score: {{ entry.importance_score }}</span>
                                 </div>
-                                <div class="text-secondary" style="white-space: pre-wrap;">{{ entry.content|truncatechars:150 }}</div>
+                                <div class="text-secondary font-monospace" style="white-space: pre-wrap; font-size: 0.72rem; line-height: 1.4; color: #a1a1aa !important;">{{ entry.content|truncatechars:150 }}</div>
                             </div>
                         {% endfor %}
                     </div>
@@ -45,33 +45,33 @@
     <!-- Right Column: Interactive Tabs for Memory Stores -->
     <div class="col-lg-8">
         <div class="glass-card p-4 border-0">
-            <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05);">
+            <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.06) !important;">
                 <div>
-                    <h5 class="text-white fw-bold mb-1">Memory Stores Tracker</h5>
+                    <h5 class="text-white fw-bold mb-1" style="letter-spacing: -0.015em;">Memory Stores Tracker</h5>
                     <p class="text-secondary small mb-0">Isolated session memory database logs for project: <strong>{{ project.title }}</strong></p>
                 </div>
-                <span class="badge bg-outline-secondary" style="border: 1px solid var(--card-border);">Session #{{ session.id }}</span>
+                <span class="badge bg-secondary-glow text-secondary" style="font-size: 0.72rem;">Session #{{ session.id }}</span>
             </div>
 
             <!-- Tab Headers -->
-            <ul class="nav nav-tabs border-0 gap-2 mb-4" id="memoryTab" role="tablist">
+            <ul class="nav nav-tabs border-0 gap-2 mb-4" id="memoryTab" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px;">
                 <li class="nav-item" role="presentation">
                     <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2 active text-white" 
-                            style="background: rgba(255,255,255,0.02);"
+                            style="background: rgba(255,255,255,0.015); white-space: nowrap; font-size: 0.8rem; font-weight: 500;"
                             id="short-tab" data-bs-toggle="tab" data-bs-target="#short-pane" type="button" role="tab" aria-controls="short-pane" aria-selected="true">
                         Short-Term History
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2" 
-                            style="background: rgba(255,255,255,0.02);"
+                            style="background: rgba(255,255,255,0.015); white-space: nowrap; font-size: 0.8rem; font-weight: 500;"
                             id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary-pane" type="button" role="tab" aria-controls="summary-pane" aria-selected="false">
                         Consolidated Summaries
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2" 
-                            style="background: rgba(255,255,255,0.02);"
+                            style="background: rgba(255,255,255,0.015); white-space: nowrap; font-size: 0.8rem; font-weight: 500;"
                             id="long-tab" data-bs-toggle="tab" data-bs-target="#long-pane" type="button" role="tab" aria-controls="long-pane" aria-selected="false">
                         Long-Term Directives
                     </button>
@@ -83,14 +83,14 @@
                 <!-- Short Term Memory -->
                 <div class="tab-pane fade show active" id="short-pane" role="tabpanel" aria-labelledby="short-tab">
                     {% if short_term %}
-                        <div class="d-flex flex-column gap-3" style="max-height: 450px; overflow-y: auto;">
+                        <div class="d-flex flex-column gap-3" style="max-height: 450px; overflow-y: auto; padding-right: 5px;">
                             {% for entry in short_term %}
-                                <div class="p-3 rounded" style="background: rgba(0,0,0,0.15); border-left: 3px solid {% if entry.role == 'USER' %}#3b82f6{% else %}var(--primary){% endif %};">
+                                <div class="p-3 rounded {% if entry.role == 'USER' %}border-user{% else %}border-agent{% endif %}" style="background: rgba(0,0,0,0.15);">
                                     <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.75rem;">
                                         <span class="fw-bold {% if entry.role == 'USER' %}text-primary{% else %}text-accent{% endif %}">{{ entry.role }}</span>
                                         <span class="text-muted">{{ entry.created_at|date:"M d, H:i:s" }}</span>
                                     </div>
-                                    <div class="text-secondary small" style="white-space: pre-wrap; font-family: monospace;">{{ entry.content }}</div>
+                                    <div class="text-secondary small code-viewer-container p-2.5 rounded" style="white-space: pre-wrap; font-family: var(--font-family-mono); font-size: 0.75rem; line-height: 1.45; color: #a1a1aa !important;">{{ entry.content }}</div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -102,14 +102,14 @@
                 <!-- Summaries -->
                 <div class="tab-pane fade" id="summary-pane" role="tabpanel" aria-labelledby="summary-tab">
                     {% if summaries %}
-                        <div class="d-flex flex-column gap-3" style="max-height: 450px; overflow-y: auto;">
+                        <div class="d-flex flex-column gap-3" style="max-height: 450px; overflow-y: auto; padding-right: 5px;">
                             {% for entry in summaries %}
-                                <div class="p-3 rounded" style="background: rgba(0,0,0,0.15); border-left: 3px solid #eab308;">
+                                <div class="p-3 rounded" style="background: rgba(0,0,0,0.15); border-left: 3px solid var(--status-thinking);">
                                     <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.75rem;">
                                         <span class="fw-bold text-warning">CONSOLIDATED SUMMARY</span>
                                         <span class="text-muted">{{ entry.created_at|date:"M d, H:i:s" }}</span>
                                     </div>
-                                    <div class="text-secondary small" style="white-space: pre-wrap; font-family: monospace;">{{ entry.content }}</div>
+                                    <div class="text-secondary small code-viewer-container p-2.5 rounded" style="white-space: pre-wrap; font-family: var(--font-family-mono); font-size: 0.75rem; line-height: 1.45; color: #a1a1aa !important;">{{ entry.content }}</div>
                                 </div>
                             {% endfor %}
                         </div>
@@ -121,14 +121,14 @@
                 <!-- Long Term Memory -->
                 <div class="tab-pane fade" id="long-pane" role="tabpanel" aria-labelledby="long-tab">
                     {% if long_term %}
-                        <div class="d-flex flex-column gap-3" style="max-height: 450px; overflow-y: auto;">
+                        <div class="d-flex flex-column gap-3" style="max-height: 450px; overflow-y: auto; padding-right: 5px;">
                             {% for entry in long_term %}
-                                <div class="p-3 rounded" style="background: rgba(0,0,0,0.15); border-left: 3px solid #10b981;">
+                                <div class="p-3 rounded" style="background: rgba(0,0,0,0.15); border-left: 3px solid var(--status-success);">
                                     <div class="d-flex align-items-center justify-content-between mb-2" style="font-size: 0.75rem;">
                                         <span class="fw-bold text-success">LONG-TERM DIRECTIVE</span>
                                         <span class="text-muted">{{ entry.created_at|date:"M d, H:i:s" }}</span>
                                     </div>
-                                    <div class="text-secondary small" style="white-space: pre-wrap; font-family: monospace;">{{ entry.content }}</div>
+                                    <div class="text-secondary small code-viewer-container p-2.5 rounded" style="white-space: pre-wrap; font-family: var(--font-family-mono); font-size: 0.75rem; line-height: 1.45; color: #a1a1aa !important;">{{ entry.content }}</div>
                                 </div>
                             {% endfor %}
                         </div>

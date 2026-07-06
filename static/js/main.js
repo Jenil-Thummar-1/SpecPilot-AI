@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('specpilot-theme', newTheme);
             updateThemeTogglerIcon(newTheme);
             
-            // Log theme adjustment locally
             console.log(`Theme toggled to: ${newTheme}`);
         });
     }
@@ -42,16 +41,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Auto-Dismiss Toast Notifications after 5 seconds
+    // 3. Auto-Dismiss Toast Notifications with elegant animations
     const toasts = document.querySelectorAll('.toast-alert');
     toasts.forEach(toast => {
+        // Set a timer to trigger dismissal fade
         setTimeout(() => {
+            toast.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
             toast.style.opacity = '0';
-            toast.style.transform = 'translateY(-10px)';
+            toast.style.transform = 'translateY(-20px) scale(0.95)';
             setTimeout(() => {
                 toast.remove();
-            }, 300);
+            }, 400);
         }, 5000);
+    });
+
+    // 4. Smooth scroll for detail tabs
+    const tabElList = [].slice.call(document.querySelectorAll('button[data-bs-toggle="tab"]'));
+    tabElList.forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', (event) => {
+            // Remove active classes from other button tabs manually if needed to keep them sync
+            tabElList.forEach(btn => {
+                if (btn !== event.target) {
+                    btn.classList.remove('text-white', 'active');
+                } else {
+                    btn.classList.add('text-white');
+                }
+            });
+    // 5. Auto-apply data-progress to progress bars to avoid parsing errors in HTML template files
+    document.querySelectorAll('.progress-bar[data-progress]').forEach(bar => {
+        const progress = bar.getAttribute('data-progress') || '0';
+        bar.style.width = progress + '%';
     });
 });
 

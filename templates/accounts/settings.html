@@ -5,19 +5,19 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="glass-panel border-0">
-            <h4 class="text-white mb-3 fw-bold">Developer Preferences & API Configurations</h4>
-            <p class="text-secondary small mb-5">Configure safety thresholds, customize your personal Gemini API credentials, choose light/dark styles, and edit workspace metadata.</p>
+    <div class="col-lg-8 col-xl-7">
+        <div class="glass-panel border-0 p-4 p-md-5">
+            <h4 class="text-white mb-2 fw-bold" style="letter-spacing: -0.02em;">Developer Settings</h4>
+            <p class="text-secondary small mb-4">Configure security tokens, override API endpoints, theme variables, and customize workspace preferences.</p>
             
-            <form method="POST">
+            <form method="POST" class="mt-4">
                 {% csrf_token %}
                 <div class="row g-4">
                     <!-- Standard Account Configurations -->
                     <div class="col-md-6">
                         <label class="form-label text-secondary small fw-semibold">Workspace Username</label>
-                        <input type="text" class="form-control form-control-custom text-muted" value="{{ user.username }}" disabled>
-                        <div class="form-text text-muted">Programmatic user slugs cannot be updated.</div>
+                        <input type="text" class="form-control form-control-custom text-muted" value="{{ user.username }}" disabled style="opacity: 0.6; cursor: not-allowed;">
+                        <div class="form-text text-muted small mt-1" style="font-size: 0.75rem;">Programmatic user slugs cannot be updated.</div>
                     </div>
                     
                     <div class="col-md-6">
@@ -26,17 +26,19 @@
                     </div>
 
                     <!-- Gemini API override Configurations -->
-                    <div class="col-12 border-top pt-4" style="border-color: rgba(255,255,255,0.05);">
-                        <label class="form-label text-white fw-bold">Gemini API Key Configurations</label>
+                    <div class="col-12 border-top pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                        <label class="form-label text-white fw-bold" style="font-size: 0.95rem;">Gemini API Key Configuration</label>
                         <input type="password" name="api_key_override" class="form-control form-control-custom" 
                                placeholder="••••••••••••••••••••••••••••••••••••"
                                value="{% if profile.api_key_override %}{{ profile.api_key_override }}{% endif %}">
-                        <div class="form-text text-muted">Provide a custom Google Gemini API Key. If left blank, the system-wide key configured in your <code>.env</code> file is used. Keys are stored encrypted in session caches.</div>
+                        <div class="form-text text-muted small mt-1.5" style="font-size: 0.75rem; line-height: 1.4;">
+                            Provide a custom Google Gemini API Key. If left blank, the system-wide key configured in your <code>.env</code> file is used. Keys are stored encrypted.
+                        </div>
                     </div>
 
                     <!-- Style preferences configurations -->
-                    <div class="col-md-6 border-top pt-4" style="border-color: rgba(255,255,255,0.05);">
-                        <label class="form-label text-white fw-bold">Visual Themes Preference</label>
+                    <div class="col-md-6 border-top pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                        <label class="form-label text-white fw-bold" style="font-size: 0.95rem;">Visual Theme Preference</label>
                         <select name="theme_preference" class="form-select form-control-custom">
                             {% for val, label in profile.THEME_CHOICES %}
                                 <option value="{{ val }}" {% if val == profile.theme_preference %}selected{% endif %}>{{ label }}</option>
@@ -45,15 +47,15 @@
                     </div>
 
                     <!-- Bio -->
-                    <div class="col-12 border-top pt-4" style="border-color: rgba(255,255,255,0.05);">
+                    <div class="col-12 border-top pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
                         <label class="form-label text-secondary small fw-semibold">Bio / Notes</label>
                         <textarea name="bio" rows="4" class="form-control form-control-custom" placeholder="Tell us about your development workspace focus...">{{ profile.bio|default:"" }}</textarea>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
-                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary border-0">Cancel</a>
-                    <button type="submit" class="btn btn-primary-custom px-4 py-2.5">
+                <div class="d-flex align-items-center justify-content-end gap-3 border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.06) !important;">
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom px-4 py-2 border-0">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom px-4 py-2">
                         <i class="bi bi-save me-1"></i> Save Preferences
                     </button>
                 </div>

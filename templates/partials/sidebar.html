@@ -1,11 +1,13 @@
 <div class="sidebar d-flex flex-column justify-content-between">
     <div>
+        <!-- Logo Brand -->
         <a href="{% url 'dashboard' %}" class="sidebar-logo">
-            <i class="bi bi-airplane-engines-fill text-primary"></i>
+            <i class="bi bi-airplane-engines-fill"></i>
             <span>SpecPilot AI</span>
         </a>
         
-        <nav class="nav flex-column">
+        <!-- Primary Menu Links -->
+        <nav class="nav flex-column gap-1">
             <a href="{% url 'dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <i class="bi bi-grid-1x2-fill"></i>
                 Dashboard
@@ -14,77 +16,87 @@
                 <i class="bi bi-folder-fill"></i>
                 Projects
             </a>
-            <a href="{% url 'agent_list' %}" class="nav-link-custom {% if 'agent_list' in request.resolver_match.url_name or 'agent_edit' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="bi bi-robot"></i>
-                Agents Portal
-            </a>
-            <a href="{% url 'skill_list' %}" class="nav-link-custom {% if 'skill_list' in request.resolver_match.url_name or 'skill_edit' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="bi bi-lightbulb-fill"></i>
-                Skills Engine
-            </a>
-            <a href="{% url 'memory_list' %}" class="nav-link-custom {% if 'memory_list' in request.resolver_match.url_name or 'memory_detail' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="bi bi-database-fill"></i>
-                Memory Vault
-            </a>
-            <a href="{% url 'prompt_library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'prompt_library' %}active{% endif %}">
-                <i class="bi bi-chat-left-quote-fill"></i>
-                Prompt Library
-            </a>
-            <a href="{% url 'execution_history' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'execution_history' %}active{% endif %}">
-                <i class="bi bi-activity"></i>
-                Execution Logs
-            </a>
+
+            <!-- Developer Workspace Section (Collapsed by Default unless active) -->
+            <details class="developer-tools-menu mt-2" 
+                     style="background: rgba(255, 255, 255, 0.015); border: 1px solid var(--card-border); border-radius: 8px; padding: 4px;"
+                     {% if 'agent' in request.path or 'skill' in request.path or 'memory' in request.path or 'prompt' in request.path or 'execution' in request.path %}open{% endif %}>
+                
+                <summary class="nav-link-custom d-flex align-items-center justify-content-between text-secondary" style="cursor: pointer; user-select: none; font-size: 0.85rem; padding: 10px 12px; border: none; background: transparent;">
+                    <span class="d-flex align-items-center gap-2">
+                        <i class="bi bi-sliders"></i>
+                        Developer Tools
+                    </span>
+                    <i class="bi bi-chevron-down summary-arrow text-muted" style="font-size: 0.75rem;"></i>
+                </summary>
+                
+                <div class="d-flex flex-column mt-2 ps-3 gap-1 border-start" style="border-color: rgba(255,255,255,0.06); margin-left: 14px; margin-bottom: 8px;">
+                    <a href="{% url 'agent_list' %}" class="nav-link-custom {% if 'agent' in request.resolver_match.url_name %}active{% endif %}" style="font-size: 0.8rem; padding: 6px 12px;">
+                        <i class="bi bi-robot"></i>
+                        Agents Config
+                    </a>
+                    <a href="{% url 'skill_list' %}" class="nav-link-custom {% if 'skill' in request.resolver_match.url_name %}active{% endif %}" style="font-size: 0.8rem; padding: 6px 12px;">
+                        <i class="bi bi-lightbulb-fill"></i>
+                        Agent Skills
+                    </a>
+                    <a href="{% url 'memory_list' %}" class="nav-link-custom {% if 'memory' in request.resolver_match.url_name %}active{% endif %}" style="font-size: 0.8rem; padding: 6px 12px;">
+                        <i class="bi bi-database-fill"></i>
+                        Context Memory
+                    </a>
+                    <a href="{% url 'prompt_library' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'prompt_library' %}active{% endif %}" style="font-size: 0.8rem; padding: 6px 12px;">
+                        <i class="bi bi-chat-left-quote-fill"></i>
+                        Prompt Library
+                    </a>
+                    <a href="{% url 'execution_history' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'execution_history' %}active{% endif %}" style="font-size: 0.8rem; padding: 6px 12px;">
+                        <i class="bi bi-activity"></i>
+                        Execution Logs
+                    </a>
+                </div>
+                
+                <!-- Agent Run Status widget -->
+                <div class="px-2 mt-3 pb-2">
+                    <div class="small fw-bold text-muted text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 0.05em;">Active Status</div>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); font-size: 0.75rem;">
+                            <span class="text-secondary"><i class="bi bi-cpu me-1 text-primary"></i> Architect</span>
+                            <span class="status-dot success"></span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); font-size: 0.75rem;">
+                            <span class="text-secondary"><i class="bi bi-calendar2-range me-1 text-accent"></i> Planner</span>
+                            <span class="status-dot idle"></span>
+                        </div>
+                    </div>
+                </div>
+            </details>
         </nav>
-        
-        <hr class="my-4" style="border-color: var(--card-border);">
-        
-        <!-- Active Agents sidebar list -->
-        <div class="px-2">
-            <div class="small fw-bold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.05em;">AI Status Control</div>
-            <div class="d-flex flex-column gap-2">
-                <div class="d-flex align-items-center justify-content-between glass-card p-2 border-0" style="background: rgba(255,255,255,0.02);">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-cpu text-primary"></i>
-                        <span class="small fw-semibold">Architect Agent</span>
-                    </div>
-                    <span class="status-dot success"></span>
-                </div>
-                <div class="d-flex align-items-center justify-content-between glass-card p-2 border-0" style="background: rgba(255,255,255,0.02);">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-calendar2-range text-accent"></i>
-                        <span class="small fw-semibold">Planner Agent</span>
-                    </div>
-                    <span class="status-dot idle"></span>
-                </div>
+    </div>
+
+    <!-- Bottom Sidebar Section -->
+    <div>
+        <!-- Platform Links -->
+        <div class="px-2 mb-3">
+            <div class="d-flex flex-wrap gap-2 text-muted" style="font-size: 0.7rem;">
+                <a href="{% url 'about' %}" class="text-decoration-none text-muted hover-text-primary">About</a>
+                <span>•</span>
+                <a href="{% url 'features' %}" class="text-decoration-none text-muted hover-text-primary">Features</a>
+                <span>•</span>
+                <a href="{% url 'docs' %}" class="text-decoration-none text-muted hover-text-primary">Docs</a>
+                <span>•</span>
+                <a href="{% url 'privacy' %}" class="text-decoration-none text-muted hover-text-primary">Privacy</a>
+                <span>•</span>
+                <a href="{% url 'terms' %}" class="text-decoration-none text-muted hover-text-primary">Terms</a>
             </div>
         </div>
-    </div>
 
-    <!-- Platform Links -->
-    <div class="px-2 mb-3 mt-4">
-        <div class="d-flex flex-wrap gap-2 text-muted" style="font-size: 0.7rem;">
-            <a href="{% url 'about' %}" class="text-decoration-none text-muted hover-text-primary">About</a>
-            <span>•</span>
-            <a href="{% url 'features' %}" class="text-decoration-none text-muted hover-text-primary">Features</a>
-            <span>•</span>
-            <a href="{% url 'docs' %}" class="text-decoration-none text-muted hover-text-primary">Docs</a>
-            <span>•</span>
-            <a href="{% url 'privacy' %}" class="text-decoration-none text-muted hover-text-primary">Privacy</a>
-            <span>•</span>
-            <a href="{% url 'terms' %}" class="text-decoration-none text-muted hover-text-primary">Terms</a>
-        </div>
-    </div>
-
-    <!-- User Section -->
-    <div class="mt-auto">
+        <!-- User profile section card -->
         <div class="glass-card p-3 border-0 d-flex align-items-center justify-content-between" style="background: rgba(255,255,255,0.025);">
             <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-gradient d-flex align-items-center justify-content-center text-white fw-bold" style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--accent));">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--accent));">
                     {{ user.username|slice:":1"|upper }}
                 </div>
                 <div>
-                    <div class="fw-semibold text-truncate" style="max-width: 130px; font-size: 0.9rem;">{{ user.username }}</div>
-                    <div class="small text-secondary" style="font-size: 0.75rem;">Developer Workspace</div>
+                    <div class="fw-semibold text-white text-truncate" style="max-width: 110px; font-size: 0.88rem;">{{ user.username }}</div>
+                    <div class="small text-secondary" style="font-size: 0.72rem;">Developer</div>
                 </div>
             </div>
             <div class="d-flex gap-1">

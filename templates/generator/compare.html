@@ -4,13 +4,13 @@
 {% block page_title %}Specifications Version Comparison{% endblock %}
 
 {% block content %}
-<div class="glass-card p-3 mb-4 border-0 d-flex align-items-center justify-content-between">
+<div class="glass-card p-4 mb-4 border-0 d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-        <h5 class="text-white fw-bold mb-1">Side-by-Side Version Comparison</h5>
+        <h5 class="text-white fw-bold mb-1" style="letter-spacing: -0.015em;">Side-by-Side Version Comparison</h5>
         <p class="text-secondary small mb-0">Comparing <strong>{{ artifact.title }}</strong> changes: version v{{ artifact.version }} vs. version v{{ compare_artifact.version }}.</p>
     </div>
-    <a href="{% url 'artifact_detail' artifact.id %}" class="btn btn-sm btn-outline-secondary border-0">
-        <i class="bi bi-arrow-left me-1"></i> Back to Spec
+    <a href="{% url 'artifact_detail' artifact.id %}" class="btn btn-secondary-custom border-0 d-flex align-items-center gap-1.5 text-decoration-none">
+        <i class="bi bi-arrow-left"></i> Back to Spec
     </a>
 </div>
 
@@ -18,22 +18,22 @@
     <!-- Version A (Current Version) -->
     <div class="col-lg-6">
         <div class="glass-card p-4 border-0">
-            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05);">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.06) !important;">
                 <h6 class="text-white fw-bold mb-0">Version v{{ artifact.version }} (Active)</h6>
-                <span class="small text-muted">{{ artifact.created_at|date:"M d, H:i" }}</span>
+                <span class="small text-muted" style="font-size: 0.72rem;">{{ artifact.created_at|date:"M d, H:i" }}</span>
             </div>
-            <div class="p-3 rounded text-secondary overflow-y-auto" style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.8rem; height: 500px; white-space: pre-wrap;">{{ artifact.content }}</div>
+            <div class="p-3 rounded text-secondary overflow-y-auto code-viewer-container" style="font-family: var(--font-family-mono); font-size: 0.78rem; height: 520px; white-space: pre-wrap; line-height: 1.45; color: #a1a1aa !important;">{{ artifact.content }}</div>
         </div>
     </div>
 
     <!-- Version B (Compare Target Version) -->
     <div class="col-lg-6">
         <div class="glass-card p-4 border-0">
-            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05);">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.06) !important;">
                 <h6 class="text-white fw-bold mb-0">Version v{{ compare_artifact.version }}</h6>
-                <span class="small text-muted">{{ compare_artifact.created_at|date:"M d, H:i" }}</span>
+                <span class="small text-muted" style="font-size: 0.72rem;">{{ compare_artifact.created_at|date:"M d, H:i" }}</span>
             </div>
-            <div class="p-3 rounded text-secondary overflow-y-auto" style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.8rem; height: 500px; white-space: pre-wrap;">{{ compare_artifact.content }}</div>
+            <div class="p-3 rounded text-secondary overflow-y-auto code-viewer-container" style="font-family: var(--font-family-mono); font-size: 0.78rem; height: 520px; white-space: pre-wrap; line-height: 1.45; color: #a1a1aa !important;">{{ compare_artifact.content }}</div>
         </div>
     </div>
 </div>

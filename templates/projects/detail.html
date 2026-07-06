@@ -4,20 +4,317 @@
 {% block page_title %}Planning Workspace{% endblock %}
 
 {% block content %}
+<!-- Top Row: Horizontal Milestones Workflow Track -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="glass-card p-4 border-0">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="text-white fw-bold mb-1" style="font-size: 0.98rem; letter-spacing: -0.015em;">Planning Milestones Workflow</h5>
+                    <p class="text-secondary small mb-0">Follow the sequential 14-stage agent pipeline to compile a verified production specification blueprint.</p>
+                </div>
+                <span class="text-secondary small d-flex align-items-center gap-1.5" style="font-size: 0.75rem; opacity: 0.8;">
+                    Scroll horizontally <i class="bi bi-arrow-right"></i>
+                </span>
+            </div>
+            
+            <div class="d-flex gap-3 overflow-x-auto pb-2.5 workflow-scroll-container" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">
+                {% for step in steps %}
+                    <div class="flex-shrink-0 workflow-step-card p-3 rounded {% if step.status == 'COMPLETED' %}step-completed{% elif step.status == 'RUNNING' %}step-running{% elif step.status == 'FAILED' %}step-failed{% else %}step-pending{% endif %}" 
+                         style="width: 250px; background: rgba(255, 255, 255, 0.012); border: 1px solid var(--card-border); scroll-snap-align: start; transition: var(--transition-smooth);">
+                        
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-white" style="font-size: 0.75rem; letter-spacing: 0.02em;">Phase {{ step.order }}</span>
+                            <span class="badge {% if step.status == 'COMPLETED' %}bg-success-glow text-success{% elif step.status == 'RUNNING' %}bg-warning-glow text-warning{% elif step.status == 'FAILED' %}bg-danger-glow text-danger{% else %}bg-secondary-glow text-secondary{% endif %}" style="font-size: 0.58rem; padding: 0.25em 0.5em;">
+                                {{ step.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <h6 class="text-white fw-bold mb-1 text-truncate" style="font-size: 0.78rem;" title="{{ step.title }}">{{ step.title }}</h6>
+                        <p class="text-secondary mb-2 text-truncate-2-lines" style="font-size: 0.7rem; line-height: 1.4; opacity: 0.8; height: 32px;">{{ step.description }}</p>
+                        
+                        <div class="d-flex align-items-center gap-2 text-muted mb-2.5" style="font-size: 0.65rem;">
+                            <span><i class="bi bi-clock me-0.5"></i>{{ step.estimated_duration_minutes }} min</span>
+                            {% if step.dependencies_str %}
+                                <span class="text-truncate" style="max-width: 100px;"><i class="bi bi-link-45deg"></i>Dep: Ph {{ step.dependencies_str }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between border-top pt-2" style="border-color: rgba(255,255,255,0.05) !important;">
+                            <span class="text-muted" style="font-size: 0.65rem;">
+                                {% if step.status == 'COMPLETED' %}
+                                    <span class="text-success fw-semibold"><i class="bi bi-patch-check-fill"></i> Success</span>
+                                {% elif step.status == 'RUNNING' %}
+                                    <span class="text-warning small"><span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px;"></span> Thinking...</span>
+                                {% else %}
+                                    <span>Pending</span>
+                                {% endif %}
+                            </span>
+                            
+                            {% if step.status == 'COMPLETED' %}
+                                <!-- Finished Step -->
+                            {% else %}
+                                {% with latest_art=step.generated_artifacts.last %}
+                                    {% if latest_art and not latest_art.is_approved %}
+                                        <a href="{% url 'artifact_detail' latest_art.id %}" class="btn btn-sm btn-outline-warning py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
+                                            Review
+                                        </a>
+                                    {% elif step.status == 'RUNNING' %}
+                                        <!-- Running -->
+                                    {% else %}
+                                        <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
+                                            Run
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Workspace Columns -->
 <div class="row g-4">
-    <!-- Left Column: Project Overview, Health Stats, and Version Control -->
+    <!-- Left Workspace Column: Generated Spec Blueprints, Document Compilers, and History -->
+    <div class="col-lg-8">
+        <!-- Generated spec artifacts tab view panel (Primary workspace focus) -->
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-4" style="letter-spacing: -0.015em;">Generated Spec Blueprints</h5>
+            
+            {% if artifacts %}
+                <ul class="nav nav-tabs border-0 gap-1.5 mb-4" id="artifactTabs" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px;">
+                    {% for art in artifacts %}
+                        <li class="nav-item" role="presentation">
+                            <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2 {% if forloop.first %}active text-white{% endif %}" 
+                                    style="background: rgba(255,255,255,0.015); white-space: nowrap; font-size: 0.8rem; font-weight: 500;"
+                                    id="art-tab-{{ art.id }}" 
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#art-pane-{{ art.id }}" 
+                                    type="button" 
+                                    role="tab" 
+                                    aria-controls="art-pane-{{ art.id }}" 
+                                    aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                                {{ art.title }}
+                            </button>
+                        </li>
+                    {% endfor %}
+                </ul>
+                
+                <div class="tab-content" id="artifactTabContent">
+                    {% for art in artifacts %}
+                        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="art-pane-{{ art.id }}" role="tabpanel" aria-labelledby="art-tab-{{ art.id }}">
+                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.06) !important;">
+                                <h6 class="text-white fw-bold mb-0" style="font-size: 0.9rem;">{{ art.title }} Document</h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="small text-muted" style="font-size: 0.75rem;">Version {{ art.version }}</span>
+                                    <a href="{% url 'artifact_detail' art.id %}" class="btn btn-sm btn-secondary-custom py-1 px-2 border-0" style="font-size: 0.72rem; border-radius: var(--border-radius-sm);">
+                                        <i class="bi bi-eye"></i> View & Review
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            {% if not art.is_approved %}
+                                <div class="d-flex flex-wrap align-items-center justify-content-between p-3 mb-3 rounded gap-2" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.15);">
+                                    <span class="small text-warning" style="font-size: 0.8rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i> Draft spec requires approval to unlock the next stage.</span>
+                                    <div class="d-flex gap-2">
+                                        <form method="POST" action="{% url 'artifact_approve' art.id %}" class="m-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success py-1 px-3" style="font-size: 0.75rem;">Approve</button>
+                                        </form>
+                                        <form method="POST" action="{% url 'artifact_reject' art.id %}" class="m-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.75rem;">Reject</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Display quality evaluations if present -->
+                            {% if art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
+                                {% with eval=art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
+                                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded border-start border-4 {% if eval.status == 'PASSED' %}border-success{% elif eval.status == 'FAILED' %}border-danger{% else %}border-warning{% endif %}" style="background: rgba(255,255,255,0.012);">
+                                        <div class="small" style="font-size: 0.8rem;">
+                                            <span class="text-secondary fw-semibold">Compliance Rating:</span>
+                                            <span class="fw-bold {% if eval.status == 'PASSED' %}text-success{% elif eval.status == 'FAILED' %}text-danger{% else %}text-warning{% endif %}">{{ eval.get_status_display }}</span>
+                                        </div>
+                                        <div class="d-flex gap-1.5">
+                                            {% for score in eval.scores.all %}
+                                                {% if score.metric_name == 'OVERALL_CONFIDENCE' %}
+                                                    <span class="badge bg-secondary-glow text-secondary" style="font-size: 0.65rem;">Confidence: {{ score.score }}/10</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endwith %}
+                            {% endif %}
+                            
+                            <div class="p-3 rounded text-secondary overflow-y-auto code-viewer-container" style="font-family: var(--font-family-mono); font-size: 0.8rem; max-height: 400px; white-space: pre-wrap; line-height: 1.45; color: #a1a1aa !important;">{{ art.content }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-file-earmark-code text-muted fs-1 mb-3 d-block"></i>
+                    <p class="text-secondary mb-0">No design documents generated yet. Run planning steps above to compile files.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Compiled Exporter panel (Collapsible) -->
+        <details class="glass-card p-4 mb-4 border-0" {% if artifacts %}open{% endif %}>
+            <summary class="d-flex align-items-center justify-content-between text-white fw-bold" style="cursor: pointer; user-select: none; font-size: 0.95rem; letter-spacing: -0.015em;">
+                <span>Compile & Export Project Blueprint</span>
+                <i class="bi bi-chevron-down summary-arrow text-muted fs-6"></i>
+            </summary>
+            
+            <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                <p class="text-secondary small mb-4">Aggregates and formats all compiled planning specifications into unified distribution copies.</p>
+                
+                <form method="POST" action="{% url 'export_project' project.id %}" class="row g-3 align-items-center m-0">
+                    {% csrf_token %}
+                    <div class="col-md-7">
+                        <select name="format" class="form-select form-control-custom" required>
+                            <option value="MARKDOWN">Markdown Document (.md)</option>
+                            <option value="PDF">Formatted PDF Blueprint (.pdf)</option>
+                            <option value="JSON">Structured JSON Spec Schema (.json)</option>
+                            <option value="ZIP">ZIP Package Archive (.zip)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <button type="submit" class="btn btn-primary-custom w-100 py-2" {% if not artifacts %}disabled{% endif %}>
+                            <i class="bi bi-file-earmark-arrow-down-fill me-1.5"></i> Compile Output
+                        </button>
+                    </div>
+                </form>
+                
+                {% if not artifacts %}
+                    <div class="form-text text-danger mt-2 small" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill"></i> Execute at least one planning task to unlock compilers.</div>
+                {% endif %}
+
+                <!-- Archive generated exports list -->
+                {% if export_jobs %}
+                    <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                        <h6 class="text-white fw-semibold small mb-2">Compiled Download Archives</h6>
+                        <div class="d-flex flex-column gap-2">
+                            {% for job in export_jobs %}
+                                <div class="d-flex align-items-center justify-content-between p-2.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi {% if job.export_format == 'PDF' %}bi-filetype-pdf text-danger{% elif job.export_format == 'JSON' %}bi-filetype-json text-warning{% elif job.export_format == 'ZIP' %}bi-file-zip-fill text-info{% else %}bi-file-earmark-markdown-fill text-primary{% endif %}"></i>
+                                        <span class="small text-secondary" style="font-size: 0.75rem;">{{ job.export_format }} compiled blueprint - {{ job.created_at|date:"M d, H:i" }}</span>
+                                    </div>
+                                    {% if job.status == 'SUCCEEDED' %}
+                                        <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0.5 text-decoration-none" style="font-size: 0.78rem;">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                    {% else %}
+                                        <span class="small text-danger">Compilation Failed</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </details>
+
+        <!-- Activity History logs timeline (Collapsed by default) -->
+        <details class="glass-card p-4 border-0">
+            <summary class="d-flex align-items-center justify-content-between text-white fw-bold" style="cursor: pointer; user-select: none; font-size: 0.95rem; letter-spacing: -0.015em;">
+                <span>Workspace Activity History</span>
+                <i class="bi bi-chevron-down summary-arrow text-muted fs-6"></i>
+            </summary>
+            
+            <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                {% if activities %}
+                    <div class="d-flex flex-column gap-3.5" style="max-height: 250px; overflow-y: auto;">
+                        {% for act in activities %}
+                            <div class="d-flex align-items-start gap-3 p-2.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.015);">
+                                <div class="rounded-circle bg-primary-glow p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
+                                    {% if act.action_type == 'CREATED' %}
+                                        <i class="bi bi-plus-circle text-primary" style="font-size: 0.85rem;"></i>
+                                    {% elif act.action_type == 'EDITED' %}
+                                        <i class="bi bi-pencil text-info" style="font-size: 0.85rem;"></i>
+                                    {% elif act.action_type == 'STAGE_UPDATED' %}
+                                        <i class="bi bi-cpu text-accent" style="font-size: 0.85rem;"></i>
+                                    {% elif act.action_type == 'RESTORED' %}
+                                        <i class="bi bi-arrow-counterclockwise text-warning" style="font-size: 0.85rem;"></i>
+                                    {% elif act.action_type == 'DUPLICATED' %}
+                                        <i class="bi bi-copy text-primary" style="font-size: 0.85rem;"></i>
+                                    {% else %}
+                                        <i class="bi bi-info-circle text-secondary" style="font-size: 0.85rem;"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="small fw-bold text-white" style="font-size: 0.8rem; line-height: 1.4;">{{ act.description }}</div>
+                                    <div class="small text-muted mt-0.5" style="font-size: 0.72rem;">
+                                        {{ act.user.username|default:"AI Orchestrator" }} | {{ act.created_at|date:"M d, Y - H:i:s" }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">No activities logged yet.</p>
+                {% endif %}
+            </div>
+        </details>
+    </div>
+
+    <!-- Right Workspace Column: Project Stats, Metadata Info, and Snapshots Rollback -->
     <div class="col-lg-4">
+        <!-- Planning Status Card -->
+        <div class="glass-card p-4 mb-4 border-0">
+            <h5 class="text-white fw-bold mb-3" style="font-size: 0.95rem; letter-spacing: -0.010em;">Planning Status</h5>
+            
+            <div class="d-flex flex-column gap-3">
+                <!-- Overall Progress -->
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1.5" style="font-size: 0.78rem;">
+                        <span class="text-secondary fw-semibold">Blueprint Completion</span>
+                        <span class="fw-bold text-white">{{ health.overall_progress|floatformat:0 }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px; background: rgba(255, 255, 255, 0.03);">
+                        <div class="progress-bar" role="progressbar" data-progress="{{ health.overall_progress|floatformat:0 }}"></div>
+                    </div>
+                </div>
+
+                <!-- Metrics grid -->
+                <div class="row g-2 text-center" style="font-size: 0.78rem;">
+                    <div class="col-6">
+                        <div class="p-2.5 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border);">
+                            <span class="text-muted d-block mb-1">Stages Done</span>
+                            <span class="fw-bold text-white d-block">{{ health.workflow_completion }}</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2.5 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border);">
+                            <span class="text-muted d-block mb-1">Time Remaining</span>
+                            <span class="fw-bold text-white d-block">{{ health.estimated_remaining_minutes }} min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-top pt-2.5 d-flex align-items-center justify-content-between" style="border-color: rgba(255,255,255,0.06) !important; font-size: 0.8rem;">
+                    <span class="text-muted">Active Stage:</span>
+                    <span class="badge bg-accent-glow text-accent" style="font-size: 0.7rem;">{{ health.active_stage }}</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Project Metadata Overview Card -->
         <div class="glass-card p-4 mb-4 border-0">
             <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="badge bg-primary-glow text-primary text-uppercase">{{ project.get_category_display }}</span>
+                <span class="badge bg-primary-glow text-primary text-uppercase" style="font-size: 0.68rem;">{{ project.get_category_display }}</span>
                 <span class="text-secondary small fw-semibold">Version {{ project.current_version }}</span>
             </div>
-            <h4 class="text-white fw-bold mb-1">{{ project.title }}</h4>
+            <h5 class="text-white fw-bold mb-1" style="font-size: 1.05rem; letter-spacing: -0.02em;">{{ project.title }}</h5>
             <p class="text-accent small fw-semibold mb-3">{{ project.short_description }}</p>
-            <p class="text-secondary small mb-4" style="text-align: justify;">{{ project.description }}</p>
+            <p class="text-secondary small mb-4" style="text-align: justify; line-height: 1.5; opacity: 0.85;">{{ project.description }}</p>
             
-            <div class="border-top pt-3" style="border-color: rgba(255,255,255,0.05); font-size: 0.85rem;">
+            <div class="border-top pt-3" style="border-color: rgba(255,255,255,0.06) !important; font-size: 0.82rem;">
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">Target Users:</span>
                     <span class="text-white text-end" style="max-width: 180px;">{{ project.target_users|default:"General Audience" }}</span>
@@ -37,332 +334,51 @@
             </div>
 
             <div class="d-flex gap-2 justify-content-end mt-4">
-                <a href="{% url 'project_timeline' project.id %}" class="btn btn-sm btn-outline-primary border-0 glass-card">
-                    <i class="bi bi-clock-history me-1"></i> Audit Timeline
+                <a href="{% url 'project_timeline' project.id %}" class="btn btn-sm btn-secondary-custom px-3 py-1.5 border-0 d-flex align-items-center gap-1">
+                    <i class="bi bi-clock-history"></i> Audit Log
                 </a>
-                <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-secondary border-0 glass-card">
-                    <i class="bi bi-pencil-square me-1"></i> Edit Settings
+                <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-secondary-custom px-3 py-1.5 border-0 d-flex align-items-center gap-1">
+                    <i class="bi bi-pencil-square"></i> Edit
                 </a>
-            </div>
-        </div>
-
-        <!-- Health Indicators Card -->
-        <div class="glass-card p-4 mb-4 border-0">
-            <h5 class="text-white fw-bold mb-3">Project Workspace Health</h5>
-            
-            <div class="d-flex flex-column gap-3">
-                <!-- Overall Progress -->
-                <div>
-                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 0.8rem;">
-                        <span class="text-secondary fw-semibold">Overall Progress</span>
-                        <span class="fw-bold text-white">{{ health.overall_progress|floatformat:0 }}%</span>
-                    </div>
-                    <div class="progress" style="height: 8px; background: var(--card-border);">
-                        <div class="progress-bar bg-primary" role="progressbar" style="--progress-width: {{ health.overall_progress|floatformat:0 }}%; width: var(--progress-width);"></div>
-                    </div>
-                </div>
-
-                <!-- Metrics grid -->
-                <div class="row g-2 text-center" style="font-size: 0.8rem;">
-                    <div class="col-6">
-                        <div class="p-2 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border);">
-                            <span class="text-muted block mb-1">Completion</span>
-                            <span class="fw-bold text-white block">{{ health.workflow_completion }} Steps</span>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="p-2 rounded" style="background: rgba(255,255,255,0.015); border: 1px solid var(--card-border);">
-                            <span class="text-muted block mb-1">Time Remaining</span>
-                            <span class="fw-bold text-white block">{{ health.estimated_remaining_minutes }} min</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border-top pt-2 d-flex align-items-center justify-content-between" style="border-color: rgba(255,255,255,0.05); font-size: 0.8rem;">
-                    <span class="text-muted">Active Stage:</span>
-                    <span class="badge bg-accent-glow text-accent">{{ health.active_stage }}</span>
-                </div>
             </div>
         </div>
 
         <!-- Version Snapshots rollback control -->
-        <div class="glass-card p-4 mb-4 border-0">
-            <h5 class="text-white fw-bold mb-3">Snapshot History</h5>
-            <p class="text-secondary small mb-3">Restore workspace parameters back to a previous backup snapshot.</p>
+        <details class="glass-card p-4 mb-4 border-0">
+            <summary class="d-flex align-items-center justify-content-between text-white fw-bold" style="cursor: pointer; user-select: none; font-size: 0.95rem; letter-spacing: -0.010em;">
+                <span>Workspace Backups</span>
+                <i class="bi bi-chevron-down summary-arrow text-muted fs-6"></i>
+            </summary>
             
-            {% if versions %}
-                <div class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
-                    {% for ver in versions %}
-                        <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border); font-size: 0.8rem;">
-                            <div>
-                                <span class="fw-bold text-white block">v{{ ver.version_number }}</span>
-                                <span class="text-muted" style="font-size: 0.7rem;">{{ ver.created_at|date:"M d, H:i" }}</span>
-                            </div>
-                            
-                            {% if ver.version_number == project.current_version %}
-                                <span class="badge bg-success-glow text-success">Active</span>
-                            {% else %}
-                                <form method="POST" action="{% url 'project_restore' project.id ver.version_number %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
-                                        Rollback
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted small mb-0">No snapshots recorded yet.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Right Column: Timeline tracker, exports compilations, and artifacts logs -->
-    <div class="col-lg-8">
-        <!-- Planning Timeline Section -->
-        <div class="glass-card p-4 mb-4 border-0">
-            <h5 class="text-white fw-bold mb-4">Planning Lifecycle Workflow</h5>
-            
-            <div class="planning-timeline">
-                {% for step in steps %}
-                    <div class="timeline-item {% if step.status == 'COMPLETED' %}completed{% elif step.status == 'RUNNING' %}running{% elif step.status == 'FAILED' %}failed{% endif %}">
-                        <div class="timeline-dot"></div>
-                        <div class="glass-card p-3 border-0 ms-2" style="background: rgba(255,255,255,0.015);">
-                            <!-- Header status -->
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <h6 class="mb-0 fw-bold text-white small">
-                                    Phase {{ step.order }}: {{ step.title }}
-                                </h6>
-                                <span class="badge {% if step.status == 'COMPLETED' %}bg-success{% elif step.status == 'RUNNING' %}bg-warning{% elif step.status == 'FAILED' %}bg-danger{% else %}bg-secondary{% endif %}-glow" style="font-size: 0.65rem;">
-                                    {{ step.get_status_display }}
-                                </span>
-                            </div>
-                            
-                            <!-- Duration & Dependencies -->
-                            <div class="d-flex align-items-center gap-3 mb-2 text-muted" style="font-size: 0.75rem;">
-                                <span><i class="bi bi-clock me-1"></i>Est: {{ step.estimated_duration_minutes }} min</span>
-                                {% if step.dependencies_str %}
-                                    <span><i class="bi bi-link-45deg me-1"></i>Depends on: Phase(s) {{ step.dependencies_str }}</span>
-                                {% endif %}
-                            </div>
-
-                            <p class="text-secondary mb-3" style="font-size: 0.8rem; text-align: justify;">{{ step.description }}</p>
-
-                            <!-- Notes if failed or has completions metadata -->
-                            {% if step.notes %}
-                                <div class="p-2.5 rounded text-secondary mb-3" style="background: rgba(0,0,0,0.15); border-left: 3px solid var(--primary); font-size: 0.8rem; font-family: monospace;">
-                                    <strong>Notes:</strong> {{ step.notes }}
+            <div class="mt-3 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                <p class="text-secondary small mb-3">Restore workspace parameters back to a previous backup snapshot.</p>
+                {% if versions %}
+                    <div class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
+                        {% for ver in versions %}
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border); font-size: 0.8rem;">
+                                <div>
+                                    <span class="fw-bold text-white d-block">v{{ ver.version_number }}</span>
+                                    <span class="text-muted" style="font-size: 0.7rem;">{{ ver.created_at|date:"M d, H:i" }}</span>
                                 </div>
-                            {% endif %}
-
-                            <!-- Actions & Dates -->
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span class="small text-muted" style="font-size: 0.7rem;">
-                                    {% if step.completed_at %}
-                                        Actual Complete: {{ step.completed_at|date:"M d, H:i" }}
-                                    {% elif step.started_at %}
-                                        Started: {{ step.started_at|date:"M d, H:i" }}
-                                    {% else %}
-                                        Pending active transition
-                                    {% endif %}
-                                </span>
-
-                                {% if step.status == 'COMPLETED' %}
-                                    <span class="text-success small fw-semibold" style="font-size: 0.75rem;">
-                                        <i class="bi bi-patch-check-fill me-1"></i> Success
-                                    </span>
+                                
+                                {% if ver.version_number == project.current_version %}
+                                    <span class="badge bg-success-glow text-success" style="font-size: 0.68rem;">Active</span>
                                 {% else %}
-                                    {% with latest_art=step.generated_artifacts.last %}
-                                        {% if latest_art and not latest_art.is_approved %}
-                                            <a href="{% url 'artifact_detail' latest_art.id %}" class="btn btn-sm btn-outline-warning px-3 py-1" style="font-size: 0.75rem;">
-                                                <i class="bi bi-exclamation-circle me-1"></i> Review specs (v{{ latest_art.version }})
-                                            </a>
-                                        {% elif step.status == 'RUNNING' %}
-                                            <button class="btn btn-sm btn-outline-warning border-0 disabled" style="font-size: 0.75rem;">
-                                                <span class="spinner-border spinner-border-sm me-1" role="status"></span> Agent Thinking...
-                                            </button>
-                                        {% else %}
-                                            <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom px-3 py-1" style="font-size: 0.75rem;">
-                                                <i class="bi bi-play-fill"></i> Run Planning Step
-                                            </a>
-                                        {% endif %}
-                                    {% endwith %}
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Compiled Exporter panel -->
-        <div class="glass-card p-4 mb-4 border-0">
-            <h5 class="text-white fw-bold mb-3">Compile & Export Project Blueprint</h5>
-            <p class="text-secondary small mb-4">Aggregates and formats all compiled planning specifications into unified distribution copies.</p>
-            
-            <form method="POST" action="{% url 'export_project' project.id %}" class="row g-3 align-items-center">
-                {% csrf_token %}
-                <div class="col-md-7">
-                    <select name="format" class="form-select form-control-custom" required>
-                        <option value="MARKDOWN">Markdown Document (.md)</option>
-                        <option value="PDF">Formatted PDF Blueprint (.pdf)</option>
-                        <option value="JSON">Structured JSON Spec Schema (.json)</option>
-                    </select>
-                </div>
-                <div class="col-md-5">
-                    <button type="submit" class="btn btn-primary-custom w-100 py-2" {% if not artifacts %}disabled{% endif %}>
-                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Compile Output
-                    </button>
-                </div>
-            </form>
-            
-            {% if not artifacts %}
-                <div class="form-text text-danger mt-2 small"><i class="bi bi-info-circle-fill"></i> Execute at least one planning task to unlock compilers.</div>
-            {% endif %}
-
-            <!-- Archive generated exports list -->
-            {% if export_jobs %}
-                <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.05);">
-                    <h6 class="text-white fw-semibold small mb-2">Compiled Download Archives</h6>
-                    <div class="d-flex flex-column gap-2">
-                        {% for job in export_jobs %}
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="bi {% if job.export_format == 'PDF' %}bi-filetype-pdf text-danger{% elif job.export_format == 'JSON' %}bi-filetype-json text-warning{% else %}bi-file-earmark-markdown-fill text-primary{% endif %}"></i>
-                                    <span class="small text-secondary" style="font-size: 0.75rem;">{{ job.export_format }} compiled blueprint - {{ job.created_at|date:"M d, H:i" }}</span>
-                                </div>
-                                {% if job.status == 'SUCCEEDED' %}
-                                    <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0" style="font-size: 0.8rem;">
-                                        <i class="bi bi-download"></i> Download
-                                    </a>
-                                {% else %}
-                                    <span class="small text-danger">Compilation Failed</span>
+                                    <form method="POST" action="{% url 'project_restore' project.id ver.version_number %}" class="d-inline m-0">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-primary py-0.5 px-2" style="font-size: 0.72rem;">
+                                            Restore
+                                        </button>
+                                    </form>
                                 {% endif %}
                             </div>
                         {% endfor %}
                     </div>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Generated spec artifacts tab view panel -->
-        <div class="glass-card p-4 mb-4 border-0">
-            <h5 class="text-white fw-bold mb-4">Generated Spec Blueprints</h5>
-            
-            {% if artifacts %}
-                <ul class="nav nav-tabs border-0 gap-2 mb-4" id="artifactTabs" role="tablist">
-                    {% for art in artifacts %}
-                        <li class="nav-item" role="presentation">
-                            <button class="btn btn-sm glass-card border-0 text-secondary text-capitalize px-3 py-2 {% if forloop.first %}active text-white{% endif %}" 
-                                    style="background: rgba(255,255,255,0.02);"
-                                    id="art-tab-{{ art.id }}" 
-                                    data-bs-toggle="tab" 
-                                    data-bs-target="#art-pane-{{ art.id }}" 
-                                    type="button" 
-                                    role="tab" 
-                                    aria-controls="art-pane-{{ art.id }}" 
-                                    aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
-                                {{ art.title }}
-                            </button>
-                        </li>
-                    {% endfor %}
-                </ul>
-                
-                <div class="tab-content" id="artifactTabContent">
-                    {% for art in artifacts %}
-                        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="art-pane-{{ art.id }}" role="tabpanel" aria-labelledby="art-tab-{{ art.id }}">
-                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.05);">
-                                <h6 class="text-white fw-bold mb-0">{{ art.title }} Document</h6>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="small text-muted">Version {{ art.version }}</span>
-                                    <a href="{% url 'artifact_detail' art.id %}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;">
-                                        <i class="bi bi-eye"></i> View & Review
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            {% if not art.is_approved %}
-                                <div class="d-flex align-items-center justify-content-between p-3 mb-3 rounded" style="background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.15);">
-                                    <span class="small text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i> Draft spec requires approval to unlock the next stage.</span>
-                                    <div class="d-flex gap-2">
-                                        <form method="POST" action="{% url 'artifact_approve' art.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-success py-1 px-3" style="font-size: 0.75rem;">Approve</button>
-                                        </form>
-                                        <form method="POST" action="{% url 'artifact_reject' art.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.75rem;">Reject</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            
-                            <!-- Display quality evaluations if present -->
-                            {% if art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
-                                {% with eval=art.step.generated_artifacts.first.step.project_plan.project.agent_executions.last.evaluations.last %}
-                                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded border-start border-4 {% if eval.status == 'PASSED' %}border-success{% elif eval.status == 'FAILED' %}border-danger{% else %}border-warning{% endif %}" style="background: rgba(255,255,255,0.015);">
-                                        <div class="small">
-                                            <span class="text-secondary fw-semibold">Compliance Rating:</span>
-                                            <span class="fw-bold {% if eval.status == 'PASSED' %}text-success{% elif eval.status == 'FAILED' %}text-danger{% else %}text-warning{% endif %}">{{ eval.get_status_display }}</span>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            {% for score in eval.scores.all %}
-                                                <span class="badge rounded bg-outline-secondary" style="font-size: 0.65rem; border: 1px solid var(--card-border);">{{ score.get_metric_name_display }}: {{ score.score }}/10</span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endwith %}
-                            {% endif %}
-                            
-                            <div class="p-3 rounded text-secondary overflow-y-auto" style="background: rgba(0,0,0,0.25); font-family: monospace; font-size: 0.85rem; max-height: 400px; white-space: pre-wrap;">{{ art.content }}</div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-file-earmark-code text-muted fs-1 mb-3 block"></i>
-                    <p class="text-secondary">No design documents generated yet. Run planning steps above to compile files.</p>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Activity History logs timeline -->
-        <div class="glass-card p-4 border-0">
-            <h5 class="text-white fw-bold mb-4">Workspace Activity History</h5>
-            
-            {% if activities %}
-                <div class="d-flex flex-column gap-3">
-                    {% for act in activities %}
-                        <div class="d-flex align-items-start gap-3 p-2 rounded {% if act.action_type == 'CREATED' %}activity-item-created{% elif act.action_type == 'RESTORED' %}activity-item-restored{% elif act.action_type == 'STAGE_UPDATED' %}activity-item-updated{% else %}activity-item-default{% endif %}" style="background: rgba(255,255,255,0.01);">
-                            <div class="rounded-circle bg-primary-glow p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                {% if act.action_type == 'CREATED' %}
-                                    <i class="bi bi-plus-circle text-primary"></i>
-                                {% elif act.action_type == 'EDITED' %}
-                                    <i class="bi bi-pencil text-info"></i>
-                                {% elif act.action_type == 'STAGE_UPDATED' %}
-                                    <i class="bi bi-cpu text-accent"></i>
-                                {% elif act.action_type == 'RESTORED' %}
-                                    <i class="bi bi-arrow-counterclockwise text-warning"></i>
-                                {% elif act.action_type == 'DUPLICATED' %}
-                                    <i class="bi bi-copy text-primary"></i>
-                                {% else %}
-                                    <i class="bi bi-info-circle text-secondary"></i>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <div class="small fw-bold text-white">{{ act.description }}</div>
-                                <div class="small text-muted" style="font-size: 0.75rem;">
-                                    Performed by: {{ act.user.username|default:"AI Orchestrator" }} | {{ act.created_at|date:"M d, Y - H:i:s" }}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-muted small mb-0">No activities logged yet.</p>
-            {% endif %}
-        </div>
+                {% else %}
+                    <p class="text-muted small mb-0">No backups recorded yet.</p>
+                {% endif %}
+            </div>
+        </details>
     </div>
 </div>
 {% endblock %}

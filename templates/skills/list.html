@@ -4,12 +4,12 @@
 {% block page_title %}Skills Engine{% endblock %}
 
 {% block content %}
-<!-- Statistics Header -->
-<div class="row g-4 mb-4">
+<!-- Statistics Header Grid -->
+<div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
             <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Total capabilities</span>
+                <span class="text-secondary small fw-semibold text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Total Capabilities</span>
                 <h3 class="mb-0 fw-bold text-white">{{ stats.total }}</h3>
             </div>
             <div class="rounded bg-primary-glow p-3">
@@ -20,10 +20,10 @@
     <div class="col-md-3">
         <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
             <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">Database Skills</span>
+                <span class="text-secondary small fw-semibold text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Database Skills</span>
                 <h3 class="mb-0 fw-bold text-white">{{ stats.db }}</h3>
             </div>
-            <div class="rounded bg-primary-glow p-3" style="background: rgba(16, 185, 129, 0.1);">
+            <div class="rounded bg-success-glow p-3">
                 <i class="bi bi-database text-success fs-4"></i>
             </div>
         </div>
@@ -31,10 +31,10 @@
     <div class="col-md-3">
         <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
             <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">API Skills</span>
+                <span class="text-secondary small fw-semibold text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">API Skills</span>
                 <h3 class="mb-0 fw-bold text-white">{{ stats.api }}</h3>
             </div>
-            <div class="rounded bg-accent-glow p-3" style="background: rgba(168, 85, 247, 0.15);">
+            <div class="rounded bg-accent-glow p-3">
                 <i class="bi bi-link-45deg text-accent fs-4"></i>
             </div>
         </div>
@@ -42,10 +42,10 @@
     <div class="col-md-3">
         <div class="glass-card p-4 border-0 d-flex align-items-center justify-content-between">
             <div>
-                <span class="text-secondary small fw-semibold uppercase block mb-1">General Skills</span>
+                <span class="text-secondary small fw-semibold text-uppercase mb-1 d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">General Skills</span>
                 <h3 class="mb-0 fw-bold text-white">{{ stats.general }}</h3>
             </div>
-            <div class="rounded bg-accent-glow p-3" style="background: rgba(59, 130, 246, 0.1);">
+            <div class="rounded bg-info-glow p-3">
                 <i class="bi bi-cpu text-info fs-4"></i>
             </div>
         </div>
@@ -55,9 +55,9 @@
 <!-- Skills Management Panel -->
 <div class="glass-card p-4 border-0">
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h5 class="mb-0 fw-bold text-white">System AI Capabilities (Tools)</h5>
-        <a href="{% url 'skill_create' %}" class="btn btn-primary-custom">
-            <i class="bi bi-plus-circle me-1"></i> Register New Skill
+        <h5 class="mb-0 fw-bold text-white" style="letter-spacing: -0.015em;">System AI Capabilities (Tools)</h5>
+        <a href="{% url 'skill_create' %}" class="btn btn-primary-custom d-flex align-items-center gap-1.5">
+            <i class="bi bi-plus-circle"></i> Register Skill
         </a>
     </div>
 
@@ -79,10 +79,10 @@
                     {% for skill in skills %}
                         <tr>
                             <td class="text-white fw-semibold small">
-                                <div>{{ skill.name }}</div>
-                                <div class="text-muted small fw-normal" style="font-size: 0.75rem;">{{ skill.description }}</div>
+                                <div style="font-size: 0.88rem;">{{ skill.name }}</div>
+                                <div class="text-secondary small fw-normal mt-0.5" style="font-size: 0.72rem; line-height: 1.4; opacity: 0.85;">{{ skill.description }}</div>
                             </td>
-                            <td class="small font-monospace text-accent">{{ skill.code_identifier }}</td>
+                            <td class="small font-monospace text-accent" style="font-size: 0.78rem;">{{ skill.code_identifier }}</td>
                             <td class="small text-secondary">{{ skill.category }}</td>
                             <td class="small text-secondary">{{ skill.execution_order }}</td>
                             <td class="small text-secondary">{{ skill.dependencies_str|default:"None" }}</td>
@@ -90,12 +90,12 @@
                                 {% if skill.versions.first %}
                                     <span class="badge bg-primary-glow text-primary">v{{ skill.versions.first.version }}</span>
                                 {% else %}
-                                    <span class="text-muted">v1.0.0</span>
+                                    <span class="badge bg-secondary-glow text-secondary">v1.0.0</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'skill_edit' skill.id %}" class="btn btn-sm btn-outline-secondary border-0 p-1" title="Configure Skill">
-                                    <i class="bi bi-pencil-square fs-5"></i>
+                                <a href="{% url 'skill_edit' skill.id %}" class="btn btn-sm btn-outline-secondary border-0 p-1.5" title="Configure Skill">
+                                    <i class="bi bi-pencil-square fs-6"></i>
                                 </a>
                             </td>
                         </tr>
@@ -105,7 +105,7 @@
         </div>
     {% else %}
         <div class="text-center py-5">
-            <i class="bi bi-lightbulb-fill text-muted fs-1 mb-3 block"></i>
+            <i class="bi bi-lightbulb-fill text-muted fs-1 mb-3 d-block"></i>
             <p class="text-secondary">No custom skills created yet. Add new capabilities to empower your Agents.</p>
         </div>
     {% endif %}
