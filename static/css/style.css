@@ -862,9 +862,35 @@ textarea.form-control-custom { resize: vertical; }
   box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.5) !important;
 }
 .step-completed { box-shadow: inset 0 0 0 1px rgba(34,197,94,0.25); }
-.step-running { box-shadow: inset 0 0 0 1px rgba(232,163,61,0.35); }
+.step-running { 
+  box-shadow: inset 0 0 0 1px rgba(232,163,61,0.35);
+  animation: pulse-running 2s infinite;
+}
 .step-failed { box-shadow: inset 0 0 0 1px rgba(241,88,63,0.3); }
 .step-pending { opacity: 0.82; }
+
+/* NEEDS REVISION — orange glow, never a dead end */
+.step-needs-revision {
+  box-shadow: inset 0 0 0 1px rgba(251,146,60,0.35), 0 0 12px -4px rgba(251,146,60,0.18) !important;
+  border-color: rgba(251,146,60,0.3) !important;
+}
+.step-needs-revision:hover {
+  box-shadow: inset 0 0 0 1px rgba(251,146,60,0.5), 0 8px 20px -6px rgba(251,146,60,0.25) !important;
+  border-color: rgba(251,146,60,0.45) !important;
+}
+
+/* Orange badge for Needs Revision status */
+.step-badge-revision {
+  background: rgba(251,146,60,0.12) !important;
+  color: #fb923c !important;
+  border: 1px solid rgba(251,146,60,0.25);
+}
+
+/* Pulse animation for running step */
+@keyframes pulse-running {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(232,163,61,0.35); }
+  50% { box-shadow: inset 0 0 0 1px rgba(232,163,61,0.6), 0 0 14px -4px rgba(232,163,61,0.3); }
+}
 
 .border-user  { border-left: 3px solid var(--primary); }
 .border-agent { border-left: 3px solid var(--accent); }

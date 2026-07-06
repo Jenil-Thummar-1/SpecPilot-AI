@@ -4,6 +4,7 @@ from apps.planner.models import ProjectPlan, PlanStep
 from apps.projects.models import ActivityLog
 from config.constants import (
     STEP_STATUS_PENDING, STEP_STATUS_COMPLETED, STEP_STATUS_RUNNING, STEP_STATUS_FAILED,
+    STEP_STATUS_NEEDS_REVISION,
     STEP_IDEA, STEP_REQUIREMENTS, STEP_PRD, STEP_USER_STORIES, STEP_FUNCTIONAL, STEP_NON_FUNCTIONAL,
     STEP_ARCHITECTURE, STEP_DATABASE, STEP_API, STEP_FOLDER_STRUCTURE, STEP_ROADMAP, STEP_SECURITY,
     STEP_TESTING, STEP_DEPLOYMENT, STEP_EXPORT_PREP
@@ -118,20 +119,29 @@ class PlannerService:
     @staticmethod
     def fail_step(step, error_message=""):
         """
-        Marks a step as failed.
+        Marks a step as needs revision (replaces the dead-end FAILED state).
+        Delegates to needs_revision_step for consistent behaviour.
         """
-        step.status = STEP_STATUS_FAILED
-        step.completed_at = timezone.now()
-        if error_message:
-            step.notes = f"Error: {error_message}"
+        PlannerService.needs_revision_step(step, reason=error_message)
+
+    @staticmethod
+    def needs_revision_step(step, reason=""):
+        """
+        Marks a step as NEEDS_REVISION, allowing the user to edit or regenerate.
+        This replaces the permanent FAILED dead-end state.
+        """
+        step.status = STEP_STATUS_NEEDS_REVISION
+        step.progress_pct = 50.0  # Halfway — content exists but not approved
+        if reason:
+            step.notes = f"Revision required: {reason}"
         step.save()
 
         ActivityLog.objects.create(
             project=step.project_plan.project,
             action_type="STAGE_UPDATED",
-            description=f"Planning stage '{step.title}' failed: {error_message}",
+            description=f"Planning stage '{step.title}' marked for revision: {reason}",
         )
-        logger.warning(f"Step '{step.title}' failed execution.")
+        logger.info(f"Step '{step.title}' marked as NEEDS_REVISION.")
 
     @staticmethod
     def calculate_health(project):
@@ -155,7 +165,7 @@ class PlannerService:
         total_count = steps.count()
         completed_count = steps.filter(status=STEP_STATUS_COMPLETED).count()
         
-        # Active step is first pending/failed/running step
+        # Active step is first pending/needs_revision/failed/running step
         active_step = steps.exclude(status=STEP_STATUS_COMPLETED).first()
         active_stage_title = active_step.title if active_step else "Fully Planned"
 

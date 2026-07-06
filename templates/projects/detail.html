@@ -277,63 +277,150 @@
                 </span>
             </div>
             
-            <div class="d-flex gap-3 overflow-x-auto pb-2.5 workflow-scroll-container" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">
+            <div class="d-flex gap-3 overflow-x-auto pb-2.5 workflow-scroll-container" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;">
                 {% for step in steps %}
-                    <div class="flex-shrink-0 workflow-step-card p-3 rounded {% if step.status == 'COMPLETED' %}step-completed{% elif step.status == 'RUNNING' %}step-running{% elif step.status == 'FAILED' %}step-failed{% else %}step-pending{% endif %}" 
-                         style="width: 250px; background: rgba(255, 255, 255, 0.012); border: 1px solid var(--card-border); scroll-snap-align: start; transition: var(--transition-smooth);">
+                    {% with latest_art=step.generated_artifacts.last %}
+                    <div class="flex-shrink-0 workflow-step-card p-3 rounded
+                        {% if step.status == 'COMPLETED' %}step-completed
+                        {% elif step.status == 'RUNNING' %}step-running
+                        {% elif step.status == 'NEEDS_REVISION' %}step-needs-revision
+                        {% elif step.status == 'FAILED' %}step-needs-revision
+                        {% else %}step-pending{% endif %}"
+                         style="width: 260px; background: rgba(255,255,255,0.012); border: 1px solid var(--card-border); scroll-snap-align: start; transition: var(--transition-smooth);">
                         
+                        <!-- Phase Header -->
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <span class="fw-bold text-white" style="font-size: 0.75rem; letter-spacing: 0.02em;">Phase {{ step.order }}</span>
-                            <span class="badge {% if step.status == 'COMPLETED' %}bg-success-glow text-success{% elif step.status == 'RUNNING' %}bg-warning-glow text-warning{% elif step.status == 'FAILED' %}bg-danger-glow text-danger{% else %}bg-secondary-glow text-secondary{% endif %}" style="font-size: 0.58rem; padding: 0.25em 0.5em;">
-                                {{ step.get_status_display }}
+                            <span class="badge
+                                {% if step.status == 'COMPLETED' %}bg-success-glow text-success
+                                {% elif step.status == 'RUNNING' %}bg-warning-glow text-warning
+                                {% elif step.status == 'NEEDS_REVISION' or step.status == 'FAILED' %}step-badge-revision
+                                {% else %}bg-secondary-glow text-secondary{% endif %}"
+                                style="font-size: 0.58rem; padding: 0.25em 0.5em;">
+                                {% if step.status == 'PENDING' %}⏸ Pending
+                                {% elif step.status == 'RUNNING' %}⚡ Generating
+                                {% elif step.status == 'COMPLETED' %}✅ Completed
+                                {% elif step.status == 'NEEDS_REVISION' or step.status == 'FAILED' %}✏️ Needs Revision
+                                {% else %}{{ step.get_status_display }}{% endif %}
                             </span>
                         </div>
                         
                         <h6 class="text-white fw-bold mb-1 text-truncate" style="font-size: 0.78rem;" title="{{ step.title }}">{{ step.title }}</h6>
-                        <p class="text-secondary mb-2 text-truncate-2-lines" style="font-size: 0.7rem; line-height: 1.4; opacity: 0.8; height: 32px;">{{ step.description }}</p>
+                        <p class="text-secondary mb-2" style="font-size: 0.7rem; line-height: 1.4; opacity: 0.8; height: 32px; overflow: hidden;">{{ step.description }}</p>
                         
-                        <div class="d-flex align-items-center gap-2 text-muted mb-2.5" style="font-size: 0.65rem;">
+                        <div class="d-flex align-items-center gap-2 text-muted mb-2" style="font-size: 0.65rem;">
                             <span><i class="bi bi-clock me-0.5"></i>{{ step.estimated_duration_minutes }} min</span>
                             {% if step.dependencies_str %}
                                 <span class="text-truncate" style="max-width: 100px;"><i class="bi bi-link-45deg"></i>Dep: Ph {{ step.dependencies_str }}</span>
                             {% endif %}
                         </div>
                         
-                        <div class="d-flex align-items-center justify-content-between border-top pt-2" style="border-color: rgba(255,255,255,0.05) !important;">
-                            <span class="text-muted" style="font-size: 0.65rem;">
-                                {% if step.status == 'COMPLETED' %}
-                                    <span class="text-success fw-semibold"><i class="bi bi-patch-check-fill"></i> Success</span>
-                                {% elif step.status == 'RUNNING' %}
-                                    <span class="text-warning small"><span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px;"></span> Thinking...</span>
-                                {% else %}
-                                    <span>Pending</span>
-                                {% endif %}
-                            </span>
-                            
+                        <!-- Progress bar for NEEDS_REVISION -->
+                        {% if step.status == 'NEEDS_REVISION' or step.status == 'FAILED' %}
+                            <div class="progress mb-2" style="height: 3px; background: rgba(255,255,255,0.05);">
+                                <div class="progress-bar bg-warning" style="width: 50%;"></div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Action Footer -->
+                        <div class="border-top pt-2" style="border-color: rgba(255,255,255,0.05) !important;">
+
                             {% if step.status == 'COMPLETED' %}
-                                <!-- Finished Step -->
+                                <!-- ✅ Completed: show view link -->
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="text-success fw-semibold" style="font-size: 0.65rem;"><i class="bi bi-patch-check-fill"></i> Approved</span>
+                                    {% if latest_art %}
+                                        <a href="{% url 'artifact_detail' latest_art.id %}" class="btn btn-sm py-0.5 px-2" style="font-size: 0.6rem; background: rgba(34,197,94,0.08); color: #4ade80; border-radius: 4px;">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    {% endif %}
+                                </div>
+
+                            {% elif step.status == 'RUNNING' %}
+                                <!-- ⚡ Running -->
+                                <div class="d-flex align-items-center gap-1 text-warning" style="font-size: 0.65rem;">
+                                    <span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px;"></span> AI Generating...
+                                </div>
+
+                            {% elif step.status == 'NEEDS_REVISION' or step.status == 'FAILED' %}
+                                <!-- ✏️ NEEDS REVISION: Full action panel — user is NEVER stuck -->
+                                <div class="d-flex flex-column gap-1.5">
+                                    <div class="d-flex gap-1.5">
+                                        <!-- Edit Content -->
+                                        {% if latest_art %}
+                                        <a href="{% url 'artifact_edit' latest_art.id %}"
+                                           class="btn btn-sm flex-fill py-0.5 px-1.5 d-flex align-items-center justify-content-center gap-1"
+                                           style="font-size: 0.6rem; background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); border-radius: 4px;">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        {% endif %}
+                                        <!-- Regenerate -->
+                                        <form method="POST" action="{% url 'artifact_regenerate' step.id %}" class="flex-fill m-0">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-sm w-100 py-0.5 px-1.5 d-flex align-items-center justify-content-center gap-1"
+                                                    style="font-size: 0.6rem; background: rgba(251,146,60,0.1); color: #fb923c; border: 1px solid rgba(251,146,60,0.25); border-radius: 4px;">
+                                                <i class="bi bi-arrow-clockwise"></i> Regen
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="d-flex gap-1.5">
+                                        <!-- View Current Draft -->
+                                        {% if latest_art %}
+                                        <a href="{% url 'artifact_detail' latest_art.id %}"
+                                           class="btn btn-sm flex-fill py-0.5 px-1.5 d-flex align-items-center justify-content-center gap-1"
+                                           style="font-size: 0.6rem; background: rgba(255,255,255,0.04); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px;">
+                                            <i class="bi bi-eye"></i> View Draft
+                                        </a>
+                                        <!-- Compare Versions (only if 2+ versions exist) -->
+                                        {% with versions=step.generated_artifacts.all %}
+                                            {% if versions.count > 1 %}
+                                                {% with first_ver=versions.last %}
+                                                <a href="{% url 'artifact_compare' latest_art.id first_ver.id %}"
+                                                   class="btn btn-sm flex-fill py-0.5 px-1.5 d-flex align-items-center justify-content-center gap-1"
+                                                   style="font-size: 0.6rem; background: rgba(255,255,255,0.04); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px;">
+                                                    <i class="bi bi-bar-chart-steps"></i> Compare
+                                                </a>
+                                                {% endwith %}
+                                            {% endif %}
+                                        {% endwith %}
+                                        {% endif %}
+                                    </div>
+                                    <!-- Revision notes (feedback) -->
+                                    {% if step.notes %}
+                                    <div class="mt-1 px-2 py-1 rounded" style="background: rgba(251,146,60,0.05); border: 1px solid rgba(251,146,60,0.15);">
+                                        <p class="mb-0 text-truncate" style="font-size: 0.58rem; color: #fb923c; opacity: 0.9;" title="{{ step.notes }}">
+                                            <i class="bi bi-chat-square-text"></i> {{ step.notes|truncatechars:60 }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
                             {% else %}
-                                {% with latest_art=step.generated_artifacts.last %}
+                                <!-- ⏸ Pending: show Run button -->
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="text-muted" style="font-size: 0.65rem;">Pending</span>
                                     {% if latest_art and not latest_art.is_approved %}
                                         <a href="{% url 'artifact_detail' latest_art.id %}" class="btn btn-sm btn-outline-warning py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
                                             Review
                                         </a>
-                                    {% elif step.status == 'RUNNING' %}
-                                        <!-- Running -->
-                                    {% else %}
+                                    {% elif step.status != 'RUNNING' %}
                                         <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
-                                            Run
+                                            ▶ Run
                                         </a>
                                     {% endif %}
-                                {% endwith %}
+                                </div>
                             {% endif %}
+
                         </div>
                     </div>
+                    {% endwith %}
                 {% endfor %}
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- Row 4: Workspace Activity History & Planning Status / Backups (Last section) -->
 <div class="row g-4 align-items-stretch">
