@@ -42,6 +42,8 @@ class AgentExecution(TimeStampedModel):
     input_tokens = models.IntegerField(default=0)
     output_tokens = models.IntegerField(default=0)
     execution_time_ms = models.IntegerField(default=0)
+    retry_count = models.IntegerField(default=0, help_text="Number of retry attempts made.")
+    quota_status = models.CharField(max_length=50, default='OK', help_text="Status of the quota/limits.")
     error_message = models.TextField(blank=True, null=True)
 
     def __str__(self):

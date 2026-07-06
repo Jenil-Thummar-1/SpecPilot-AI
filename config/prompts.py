@@ -6,20 +6,14 @@ Updated to support enterprise-grade reasoning, long-term consistency, and collap
 
 # Common thought process and formatting directives
 THOUGHT_PROCESS_DIRECTIVE = """
-You MUST start your response with a collapsible thought process block containing your domain reasoning:
+Start your response with a thought process block:
 <details>
 <summary>🧠 AI Orchestrator Thought Process & Reasoning</summary>
-Perform a rigorous, step-by-step analysis of:
-1. Business Domain & Objectives
-2. Tech Stack suitability & Scalability implications
-3. Security, compliance, and regulatory considerations
-4. Key architectural decisions and trade-offs
-5. Dependencies on previously approved specifications
-6. Technical risks and mitigation strategies
+Perform step-by-step domain, tech stack, security, architecture, and risk analysis.
 </details>
 
-After the closing </details> tag, output the complete, professional, enterprise-grade specification document in clean Markdown.
-NEVER generate placeholders, "TODO" notes, or generic chatbot filler. Every single section must be fully written, detailed, and ready for client delivery.
+Output the complete, professional, enterprise-grade specification document in clean Markdown.
+No placeholders, TODOs, or chatbot filler.
 """
 
 # =====================================================================

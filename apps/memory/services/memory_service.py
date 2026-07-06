@@ -39,27 +39,103 @@ class MemoryService:
         return entry
 
     @staticmethod
-    def load_context(project, limit=10):
+    def generate_artifact_summary(step, artifact_content):
+        """
+        Uses standard/low-cost model (gemini-2.5-flash) to generate a concise summary
+        of the artifact content and stores it in the step's metadata['summary'].
+        """
+        if not artifact_content:
+            return ""
+
+        from apps.core.services.gemini_service import GeminiService
+        from config.ai import DEFAULT_MODEL_NAME
+        
+        project = step.project_plan.project
+        api_key = None
+        if project.user and hasattr(project.user, 'profile') and project.user.profile.api_key_override:
+            api_key = project.user.profile.api_key_override
+
+        # Fast model for summarization to be quota friendly and cost effective
+        ai_service = GeminiService(api_key=api_key, model_name=DEFAULT_MODEL_NAME)
+        
+        summary_prompt = (
+            f"Generate a highly concise, structured summary (max 200 words) of the following "
+            f"planning specification for '{step.title}'. Focus only on key stack choices, database schema highlights, "
+            f"endpoints, or business rules that subsequent phases must know. Avoid placeholders, filler, or headers:\n\n"
+            f"{artifact_content}"
+        )
+        
+        try:
+            res = ai_service.generate_text(
+                prompt=summary_prompt,
+                system_instruction="You are a senior technical program manager summarizing software specifications.",
+                temperature=0.1
+            )
+            summary_text = res.get("text", "")
+            if summary_text:
+                if not isinstance(step.metadata, dict):
+                    step.metadata = {}
+                step.metadata["summary"] = summary_text
+                step.save()
+                logger.info(f"Saved generated summary for Phase {step.order}: {step.title}")
+                return summary_text
+        except Exception as e:
+            logger.error(f"Failed to generate summary for step {step.title}: {e}")
+            
+        return ""
+
+    @staticmethod
+    def load_context(project, limit=10, current_step=None):
         """
         Assembles approved phase specifications, recent short-term memories,
-        and summaries as a single contextual string.
+        and summaries as a single contextual string. Uses dependencies of the current step
+        and concise structured summaries to minimize prompt token count.
         """
         from apps.generator.models import GeneratedArtifact
 
-        # 1. Load all approved artifacts in order
+        # 1. Parse dependencies if current_step is provided
+        deps_orders = []
+        if current_step and current_step.dependencies_str:
+            try:
+                deps_orders = [int(x.strip()) for x in current_step.dependencies_str.split(',') if x.strip()]
+            except ValueError:
+                pass
+
+        # Load approved artifacts in order
         approved_arts = GeneratedArtifact.objects.filter(
             project=project,
             is_approved=True
         ).order_by('step__order')
+        
+        # If we have explicit dependencies, we only load those!
+        # Otherwise, load all (fallback for global context)
+        if deps_orders:
+            approved_arts = approved_arts.filter(step__order__in=deps_orders)
         
         context_parts = []
         
         if approved_arts.exists():
             context_parts.append("--- APPROVED SPECIFICATIONS FROM PREVIOUS PHASES ---")
             for art in approved_arts:
+                step = art.step
+                summary_text = ""
+                
+                # Fetch summary from cache (metadata) or generate it
+                if step:
+                    if not isinstance(step.metadata, dict):
+                        step.metadata = {}
+                    summary_text = step.metadata.get("summary", "")
+                    
+                    if not summary_text:
+                        summary_text = MemoryService.generate_artifact_summary(step, art.content)
+                
+                # Fallback to truncated content if no summary was cached or generated
+                if not summary_text:
+                    summary_text = art.content[:800] + "\n... (truncated)"
+                    
                 context_parts.append(
                     f"### Phase {art.step.order if art.step else 'X'}: {art.title}\n"
-                    f"{art.content}\n"
+                    f"{summary_text}\n"
                 )
             context_parts.append("--- END OF PREVIOUS APPROVED SPECIFICATIONS ---\n")
 

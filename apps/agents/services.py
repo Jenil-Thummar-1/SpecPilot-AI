@@ -32,6 +32,215 @@ class AgentOrchestratorService:
     matching tool skills, validating outputs, calling Gemini with retries, and logging execution metrics.
     """
 
+    @classmethod
+    def execute_sequential_generation(cls, step, context_doc, system_prompt, temperature, ai_service):
+        """
+        Sequentially generates large documents in multiple phases to fit constraints.
+        """
+        logger.info(f"Running sequential generation for large step: {step.title}")
+        
+        aggregated_text = ""
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_time_ms = 0
+        total_retries = 0
+        final_quota_status = "OK"
+        
+        if step.step_type == STEP_USER_STORIES:
+            # 1. Generate Story Index
+            index_prompt = (
+                f"Analyze the following PRD and context. Generate a logical Epic breakdown and a list of all "
+                f"User Stories for this project. Specify ONLY the Epic names, User Story IDs (e.g. US-01, US-02), "
+                f"Titles, Story statements (As a... I want to... so that...), and story point estimates. "
+                f"DO NOT write the Gherkin acceptance criteria yet. Keep it structured:\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res = ai_service.generate_text(prompt=index_prompt, system_instruction=system_prompt, temperature=temperature)
+            if not res.get("success"):
+                raise Exception(res.get("error", "Failed to generate User Stories index."))
+                
+            story_index = res["text"]
+            total_input_tokens += res["input_tokens"]
+            total_output_tokens += res["output_tokens"]
+            total_time_ms += res["elapsed_time_ms"]
+            total_retries += res.get("retry_count", 0)
+            
+            # 2. Generate detailed Gherkin acceptance criteria in chunks
+            details_prompt = (
+                f"Based on the PRD context, write the complete, detailed User Stories (including full Given-When-Then "
+                f"acceptance criteria, Normal/Alternative flows, and validation rules) for the stories listed below. "
+                f"Use this index to guide the generation:\n\n"
+                f"Story Index:\n{story_index}\n\n"
+                f"Context:\n{context_doc}\n\n"
+                f"Task: Generate detailed criteria for the FIRST HALF of the stories (e.g., US-01 through US-05)."
+            )
+            res2 = ai_service.generate_text(prompt=details_prompt, system_instruction=system_prompt, temperature=temperature)
+            if not res2.get("success"):
+                raise Exception(res2.get("error", "Failed to generate detailed User Stories part 1."))
+                
+            details_part1 = res2["text"]
+            total_input_tokens += res2["input_tokens"]
+            total_output_tokens += res2["output_tokens"]
+            total_time_ms += res2["elapsed_time_ms"]
+            total_retries += res2.get("retry_count", 0)
+            
+            details_prompt2 = (
+                f"Based on the PRD context, write the complete, detailed User Stories (including full Given-When-Then "
+                f"acceptance criteria, Normal/Alternative flows, and validation rules) for the stories listed below. "
+                f"Use this index to guide the generation:\n\n"
+                f"Story Index:\n{story_index}\n\n"
+                f"Context:\n{context_doc}\n\n"
+                f"Task: Generate detailed criteria for the SECOND HALF of the stories (e.g., US-06 and onwards)."
+            )
+            res3 = ai_service.generate_text(prompt=details_prompt2, system_instruction=system_prompt, temperature=temperature)
+            if not res3.get("success"):
+                raise Exception(res3.get("error", "Failed to generate detailed User Stories part 2."))
+                
+            details_part2 = res3["text"]
+            total_input_tokens += res3["input_tokens"]
+            total_output_tokens += res3["output_tokens"]
+            total_time_ms += res3["elapsed_time_ms"]
+            total_retries += res3.get("retry_count", 0)
+            
+            # Merge
+            aggregated_text = (
+                f"# Epic & Story Outline\n\n{story_index}\n\n"
+                f"# User Stories Details - Part 1\n\n{details_part1}\n\n"
+                f"# User Stories Details - Part 2\n\n{details_part2}"
+            )
+            
+        elif step.step_type == STEP_FUNCTIONAL:
+            # 1. Generate Requirements index
+            index_prompt = (
+                f"Analyze the User Stories and PRD. Generate a complete index of all Functional Requirements "
+                f"for this system (categorized into User Management/Auth, Core Data CRUD, APIs, Background Tasks, and UI). "
+                f"List only the Requirement IDs (e.g. FR-AUTH-01, FR-CORE-01) and Titles. "
+                f"DO NOT write the detailed descriptions or parameters yet:\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res = ai_service.generate_text(prompt=index_prompt, system_instruction=system_prompt, temperature=temperature)
+            if not res.get("success"):
+                raise Exception(res.get("error", "Failed to generate Functional Requirements index."))
+                
+            req_index = res["text"]
+            total_input_tokens += res["input_tokens"]
+            total_output_tokens += res["output_tokens"]
+            total_time_ms += res["elapsed_time_ms"]
+            total_retries += res.get("retry_count", 0)
+            
+            # 2. Generate details in chunks
+            details_prompt = (
+                f"Based on the index and context, write the complete, detailed specification for the FIRST HALF "
+                f"of the Functional Requirements (such as FR-AUTH and FR-CORE). Specify Requirement ID, Title, Description "
+                f"of system response, inputs, outputs, validation constraints, and error flows:\n\n"
+                f"Requirements Index:\n{req_index}\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res2 = ai_service.generate_text(prompt=details_prompt, system_instruction=system_prompt, temperature=temperature)
+            if not res2.get("success"):
+                raise Exception(res2.get("error", "Failed to generate detailed Functional Requirements part 1."))
+                
+            details_part1 = res2["text"]
+            total_input_tokens += res2["input_tokens"]
+            total_output_tokens += res2["output_tokens"]
+            total_time_ms += res2["elapsed_time_ms"]
+            total_retries += res2.get("retry_count", 0)
+            
+            details_prompt2 = (
+                f"Based on the index and context, write the complete, detailed specification for the SECOND HALF "
+                f"of the Functional Requirements (such as FR-API, FR-JOB, FR-UI). Specify Requirement ID, Title, Description "
+                f"of system response, inputs, outputs, validation constraints, and error flows:\n\n"
+                f"Requirements Index:\n{req_index}\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res3 = ai_service.generate_text(prompt=details_prompt2, system_instruction=system_prompt, temperature=temperature)
+            if not res3.get("success"):
+                raise Exception(res3.get("error", "Failed to generate detailed Functional Requirements part 2."))
+                
+            details_part2 = res3["text"]
+            total_input_tokens += res3["input_tokens"]
+            total_output_tokens += res3["output_tokens"]
+            total_time_ms += res3["elapsed_time_ms"]
+            total_retries += res3.get("retry_count", 0)
+            
+            aggregated_text = (
+                f"# Functional Requirements Index\n\n{req_index}\n\n"
+                f"# Functional Requirements Specifications - Part 1\n\n{details_part1}\n\n"
+                f"# Functional Requirements Specifications - Part 2\n\n{details_part2}"
+            )
+            
+        elif step.step_type == STEP_API:
+            # 1. Generate API Standards & Route Definitions table
+            index_prompt = (
+                f"Analyze the system context and design a complete RESTful/GraphQL API. "
+                f"Generate a standards overview and a complete Route Definitions Table (Method, Path, Auth Required, Description). "
+                f"DO NOT include the full JSON payloads yet:\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res = ai_service.generate_text(prompt=index_prompt, system_instruction=system_prompt, temperature=temperature)
+            if not res.get("success"):
+                raise Exception(res.get("error", "Failed to generate API Route table."))
+                
+            route_table = res["text"]
+            total_input_tokens += res["input_tokens"]
+            total_output_tokens += res["output_tokens"]
+            total_time_ms += res["elapsed_time_ms"]
+            total_retries += res.get("retry_count", 0)
+            
+            # 2. Generate payloads in chunks
+            details_prompt = (
+                f"Based on the route table and system context, write the complete request/response JSON payloads "
+                f"and error codes for the top 3 critical API endpoints:\n\n"
+                f"Route Table:\n{route_table}\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res2 = ai_service.generate_text(prompt=details_prompt, system_instruction=system_prompt, temperature=temperature)
+            if not res2.get("success"):
+                raise Exception(res2.get("error", "Failed to generate API payloads part 1."))
+                
+            payloads_part1 = res2["text"]
+            total_input_tokens += res2["input_tokens"]
+            total_output_tokens += res2["output_tokens"]
+            total_time_ms += res2["elapsed_time_ms"]
+            total_retries += res2.get("retry_count", 0)
+            
+            details_prompt2 = (
+                f"Based on the route table and system context, write the complete request/response JSON payloads, "
+                f"rate limiting limits, error codes, and standardized error response schema for the remaining critical API endpoints:\n\n"
+                f"Route Table:\n{route_table}\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res3 = ai_service.generate_text(prompt=details_prompt2, system_instruction=system_prompt, temperature=temperature)
+            if not res3.get("success"):
+                raise Exception(res3.get("error", "Failed to generate API payloads part 2."))
+                
+            payloads_part2 = res3["text"]
+            total_input_tokens += res3["input_tokens"]
+            total_output_tokens += res3["output_tokens"]
+            total_time_ms += res3["elapsed_time_ms"]
+            total_retries += res3.get("retry_count", 0)
+            
+            aggregated_text = (
+                f"# API Standards & Routes\n\n{route_table}\n\n"
+                f"# API Endpoint Details - Part 1\n\n{payloads_part1}\n\n"
+                f"# API Endpoint Details - Part 2\n\n{payloads_part2}"
+            )
+            
+        else:
+            # Fallback
+            res = ai_service.generate_text(prompt=context_doc, system_instruction=system_prompt, temperature=temperature)
+            return res
+
+        return {
+            "text": aggregated_text,
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens,
+            "elapsed_time_ms": total_time_ms,
+            "retry_count": total_retries,
+            "quota_status": final_quota_status,
+            "success": True
+        }
+
     @staticmethod
     @transaction.atomic
     def execute_pipeline(step_id, user):
@@ -113,8 +322,8 @@ class AgentOrchestratorService:
         )
 
         try:
-            # 5. Load memory logs context
-            memory_context = MemoryService.load_context(project)
+            # 5. Load memory logs context (passing current step reference!)
+            memory_context = MemoryService.load_context(project, current_step=step)
 
             # 6. Format prompt template values
             if step.step_type == STEP_REQUIREMENTS:
@@ -148,7 +357,7 @@ class AgentOrchestratorService:
                 "config_settings": agent.config_settings
             }
 
-            # 9. Instantiate Gemini Client & Run with Retries
+            # 9. Instantiate Gemini Client
             api_key = None
             if hasattr(user, 'profile') and user.profile.api_key_override:
                 api_key = user.profile.api_key_override
@@ -159,26 +368,26 @@ class AgentOrchestratorService:
                 model_name=ADVANCED_MODEL_NAME
             )
 
-            max_retries = 3
-            response = None
-            for attempt in range(max_retries):
-                try:
-                    response = ai_service.generate_text(
-                        prompt=prompt,
-                        system_instruction=system_prompt,
-                        temperature=agent.temperature
-                    )
-                    if response.get("success", False):
-                        break
-                    else:
-                        logger.warning(f"Gemini API attempt {attempt + 1} failed: {response.get('error')}")
-                        if attempt == max_retries - 1:
-                            raise Exception(response.get("error", "API request failed after retries."))
-                        time.sleep(1.5)
-                except Exception as retry_ex:
-                    if attempt == max_retries - 1:
-                        raise retry_ex
-                    time.sleep(1.5)
+            is_large_step = step.step_type in [STEP_USER_STORIES, STEP_FUNCTIONAL, STEP_API]
+            is_mock_mode = not api_key or api_key == "dummy-api-key-for-now"
+
+            if is_large_step and not is_mock_mode:
+                response = AgentOrchestratorService.execute_sequential_generation(
+                    step=step,
+                    context_doc=memory_context,
+                    system_prompt=system_prompt,
+                    temperature=agent.temperature,
+                    ai_service=ai_service
+                )
+            else:
+                response = ai_service.generate_text(
+                    prompt=prompt,
+                    system_instruction=system_prompt,
+                    temperature=agent.temperature
+                )
+
+            if not response.get("success", False):
+                raise Exception(response.get("error", "API request failed."))
 
             generated_text = response["text"]
             elapsed_time_ms = response.get("elapsed_time_ms", int((time.time() - start_time) * 1000))
@@ -213,6 +422,8 @@ class AgentOrchestratorService:
             execution.input_tokens = response.get("input_tokens", len(prompt) // 4)
             execution.output_tokens = response.get("output_tokens", len(generated_text) // 4)
             execution.execution_time_ms = elapsed_time_ms
+            execution.retry_count = response.get("retry_count", 0)
+            execution.quota_status = response.get("quota_status", "OK")
             execution.status = 'SUCCEEDED'
             execution.save()
 
@@ -236,6 +447,8 @@ class AgentOrchestratorService:
             execution.status = 'FAILED'
             execution.error_message = str(e)
             execution.execution_time_ms = elapsed_time_ms
+            execution.retry_count = response.get("retry_count", 0) if (locals().get("response") and isinstance(response, dict)) else 0
+            execution.quota_status = response.get("quota_status", "ERROR") if (locals().get("response") and isinstance(response, dict)) else "ERROR"
             execution.save()
 
             PlannerService.fail_step(step, error_message=str(e))
