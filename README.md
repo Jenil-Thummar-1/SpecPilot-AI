@@ -1,46 +1,58 @@
 # SpecPilot AI
-> **AI Project Architect & Software Planning Agent**
+> **Enterprise-Grade AI Project Architect & Software Planning Platform**
 
-SpecPilot AI is an enterprise-grade AI-powered Project Architect Agent that transforms simple software ideas into complete, production-ready project blueprints. Rather than behaving as a simple chat interface, it implements a highly structured 14-phase software architecture design and development planning pipeline.
+SpecPilot AI is a production-ready Autonomous AI Project Architect Platform designed to transform raw software ideas into complete, production-ready project blueprints, technical designs, database schemas, and deployment plans. Rather than behaving as a simple chat interface, it implements a highly structured, state-locked 15-phase software design and planning pipeline.
 
 ---
 
 ## 🛠️ Technology Stack & Architecture
 
-- **Backend**: Python 3.12+ & Django 5.x
-- **Frontend**: HTML5, Vanilla JavaScript, CSS3 variables, and Bootstrap 5 (incorporating custom Material-inspired styling, theme selectors, and glassmorphic panels)
-- **AI Engine**: Google Gemini API Integration Layer
-- **Architecture Style**: Clean Architecture with a decoupled Service Layer to isolate business logic from model entities and views.
+- **Backend Framework**: Python 3.12+ & Django 5.x
+- **Frontend Architecture**: HTML5, Vanilla JavaScript, CSS3 custom variables, and Bootstrap 5 (styled with a premium glassmorphic, dark-mode design language)
+- **AI Orchestration**: Google Gemini API client integration layer (`GeminiService`) with mock failover safety support
+- **Design Pattern**: Clean Architecture with decoupled business logic Service Layers (`ProjectService`, `PlannerService`, `MemoryService`, `ExportService`, `EvaluationService`)
 
 ---
 
-## 📂 Modular Django Apps
+## 📂 Project Structure & Directories Layout
 
-1. **`core`**: Contains base class mixins, prompt sanitizers, and the `GeminiService` client.
-2. **`accounts`**: Custom authentication user schema and workspace profiles.
-3. **`dashboard`**: Aggregates workspace KPIs, active agent states, memory footprint, and compile outputs.
-4. **`projects`**: Project details, idea scopes, and target architecture styles.
-5. **`planner`**: A 14-step planning finite state machine.
-6. **`agents`**: Specialization parameters (Architect, Planner, QA, Writer) and system directive setups.
-7. **`skills`**: Programs capability specifications (SQL tables layout, REST route mapping).
-8. **`memory`**: Context managers handling short/long term logs and window limit summaries.
-9. **`generator`**: Outputs files repository (Markdown, JSON schemas).
-9. **`evaluation`**: automated parsing guards scoring formatting checks and compliance.
-10. **`exports`**: Package builders converting blueprints into unified Markdown, PDF, or JSON.
+```
+SpecPilot AI/
+│
+├── apps/
+│   ├── core/         # Shared helpers, prompt builders, and Gemini client wrappers
+│   ├── accounts/     # Custom user profiles, theme states, and custom API key overrides
+│   ├── dashboard/    # Analytics panels, KPI widgets, and static pages
+│   ├── projects/     # Project workspaces details, CRUD operations, and revisions seeder
+│   ├── planner/      # 15-step Finite State Machine (FSM) workflow engine
+│   ├── agents/       # AI Role models (Architect, Planner, QA, Writer) & orchestrator
+│   ├── skills/       # Custom skillsets (RESTful definitions, DB schemas layout)
+│   ├── memory/       # Context workspace memory logs (Short/Long term banks)
+│   ├── generator/    # Outputs files repository (Markdown, JSON specifications)
+│   ├── evaluation/   # Automated 10-metric compliance QA checks
+│   └── exports/      # Output packaging engine (Markdown, PDF, JSON, ZIP bundles)
+│
+├── static/           # Stylesheets, micro-animations, and scripts
+├── templates/        # Django HTML templates (Glassmorphic dashboard portal)
+├── config/           # URL mapping routes and global Django project configuration
+├── db.sqlite3        # Local SQLite database
+├── manage.py         # Django execution manager
+└── requirements.txt  # Dependencies list
+```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Installation Guide
 
-### 1. Requirements
-Ensure Python 3.12+ is installed on your local host machine.
+### 1. Prerequisite Installations
+Ensure Python 3.12+ is installed on your local host system.
 
-### 2. Setup Virtual Environment & Install Dependencies
+### 2. Setup Virtual Environment & Install Packages
 ```bash
-# Create virtual environment
+# Create local virtual environment
 python -m venv .venv
 
-# Activate (Windows Powershell)
+# Activate Virtual Environment (Windows Powershell)
 .venv\Scripts\Activate.ps1
 
 # Install requirements
@@ -48,45 +60,62 @@ pip install -r requirements.txt
 ```
 
 ### 3. Setup Configuration
-A default `.env` file has been configured for local development. For production usage, update credentials inside:
-- `.env`
+Ensure your root environment file is configured:
+Create or edit the `.env` file in the root workspace and add your credentials:
+```env
+SECRET_KEY=django-insecure-development-key
+DEBUG=True
+GEMINI_API_KEY=your-google-gemini-studio-api-key-here
+```
+*Note: If `GEMINI_API_KEY` is not provided, the platform automatically runs in Mock Fallback Mode using mock specifications templates.*
 
-### 4. Running Migrations & Startup
+### 4. Database Migrations & Seeding
 ```bash
-# Run database migrations
+# Apply database schemas migrations
 python manage.py migrate
 
-# Launch the development server
+# Seed baseline AI Agents, skills, and admin credentials
 python manage.py runserver
 ```
-Visit http://127.0.0.1:8000/ to access the application.
 
 ---
 
-## 🔑 Administrative Access
-A default superuser account has been initialized for workspace configuration:
+## 🔑 Default Credentials & Access Logins
+A default administrator account is pre-configured:
 - **Username**: `admin`
 - **Password**: `adminpassword123`
 - **Email**: `admin@specpilot.ai`
 
-Admin URL: http://127.0.0.1:8000/admin/
+Admin Dashboard access: http://127.0.0.1:8000/admin/
 
 ---
 
-## 🔄 The 14-Step Planning Lifecycle
+## 🌟 Demo Mode: Seeding Completed Workspaces
+To explore the platform instantly without manual data entry:
+1. Log in using the admin credentials above.
+2. If no projects are loaded, a banner will appear: **"Explore SpecPilot AI instantly! Initialize Demo Workspaces"**.
+3. Click the button to automatically seed:
+   - **Hospital Management System (HMS)**
+   - **AI HRMS Platform**
+   - **Enterprise E-Commerce Engine**
+4. All 15 planning stages will be generated with realistic specifications, quality ratings, activity timelines, and exports.
 
-Every software project moves through these structured planning steps:
-1. **Project Idea**: Concept overview.
-2. **Requirements**: Feature list boundaries and integrations.
-3. **PRD**: Product Requirements Document detailing prioritization and release criteria.
-4. **User Stories**: Actions statements with acceptance criteria.
-5. **Functional Requirements**: System actions mapping.
-6. **Non-Functional Requirements**: Speeds, limits, availability, and safety rules.
-7. **Architecture**: Technology recommendations, patterns, and diagrams.
-8. **Database Design**: Model tables schemas, keys, constraints, and indexes.
-9. **API Design**: Routes paths, headers, and request/response payloads.
-10. **Folder Structure**: Directory structures tree layout.
-11. **Development Roadmap**: Milestone sprints and task schedulers.
-12. **Security Checklist**: Access policies and vulnerability protection guards.
-13. **Testing Checklist**: QA strategies, API mocks, and E2E cases.
-14. **Deployment Plan**: CI/CD pipelines, container orchestration, and configs.
+---
+
+## 🔄 The 15-Stage Planning Lifecycle
+Every software project progresses through this structured sequence:
+1. **Project Idea**: Elevator pitch and category assignment.
+2. **Core Requirements**: Functional boundaries.
+3. **PRD**: Product Requirements Document (PRD).
+4. **User Stories**: Functional stories with user persona guides.
+5. **Functional Requirements**: Clear system actions list.
+6. **Non-Functional Requirements**: Technical thresholds (latency, uptime).
+7. **System Architecture Design**: System patterns, layers, and flows.
+8. **Database Design**: Schema models, tables, indexes, and keys.
+9. **API Design**: HTTP routes, payloads, and parameter definitions.
+10. **Codebase Folder Structure**: File structures structure layouts.
+11. **Development Roadmap**: Milestones sprints schedules.
+12. **Security Checklist**: Safety guards and encryption checkers.
+13. **Testing Checklist**: QA unit test cases and mock plans.
+14. **Deployment Plan**: CI/CD pipelines and Docker containers.
+15. **Export Preparation**: Output compilation packaging.

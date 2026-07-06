@@ -4,6 +4,21 @@
 {% block page_title %}SpecPilot Workspace{% endblock %}
 
 {% block content %}
+{% if not analytics.total_projects %}
+<div class="glass-card p-4 border-0 mb-4 d-flex align-items-center justify-content-between" style="background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.2) !important;">
+    <div>
+        <h5 class="text-white fw-bold mb-1"><i class="bi bi-rocket-takeoff-fill text-primary me-2"></i> Explore SpecPilot AI instantly!</h5>
+        <p class="text-secondary small mb-0">No workspace data found. Load pre-completed demo projects (HMS, HRMS, E-Commerce) complete with timelines, specs, and evaluations.</p>
+    </div>
+    <form method="POST" action="{% url 'project_seed_demo' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary-custom px-4 py-2">
+            <i class="bi bi-cloud-download me-1"></i> Initialize Demo Workspaces
+        </button>
+    </form>
+</div>
+{% endif %}
+
 <!-- Enterprise KPI Analytics cards row -->
 <div class="row g-4 mb-4">
     <div class="col-sm-6 col-lg-3">

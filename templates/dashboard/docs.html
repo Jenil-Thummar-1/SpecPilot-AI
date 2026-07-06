@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}SpecPilot AI - Documentation Guide{% endblock %}
+{% block page_title %}Documentation & Help{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="glass-panel border-0">
+            <h3 class="text-white fw-bold mb-3">Platform Help & Setup Guides</h3>
+            <p class="text-secondary mb-5">Quick reference instructions detailing setup, prompt customizations, and credentials overrides.</p>
+
+            <div class="d-flex flex-column gap-4 text-secondary" style="font-size: 0.9rem; text-align: justify;">
+                <div>
+                    <h5 class="text-white fw-bold"><i class="bi bi-gear-fill me-2 text-primary"></i> 1. Configuring Gemini API credentials</h5>
+                    <p class="mb-0">SpecPilot AI queries Google's Gemini LLMs to write specifications. By default, the system loads the key from the <code>GEMINI_API_KEY</code> environment variable in your root directory. Alternatively, developers can specify a key inside the <a href="{% url 'settings' %}" class="text-primary hover-underline">System Settings</a> page to override it for their active session.</p>
+                </div>
+
+                <div>
+                    <h5 class="text-white fw-bold"><i class="bi bi-play-circle-fill me-2 text-accent"></i> 2. Executing Workflow steps</h5>
+                    <p class="mb-0">Navigate to any project workspace workspace. If previous steps are <code>COMPLETED</code>, the subsequent stage button becomes active. Clicking "Run Planning Step" initiates the active Agent's task. Once execution concludes, the spec status enters a "Pending Review" lock state.</p>
+                </div>
+
+                <div>
+                    <h5 class="text-white fw-bold"><i class="bi bi-journal-check me-2 text-success"></i> 3. Reviewing & Editing Specifications</h5>
+                    <p class="mb-0">Click the generated specification block or select "View & Review". You can:
+                    <ul>
+                        <li><strong>Approve:</strong> Unlocks the next planning stage.</li>
+                        <li><strong>Reject:</strong> Flags the stage as FAILED, allowing you to run regeneration.</li>
+                        <li><strong>Edit:</strong> Modifies the specification text manually, which saves the update as an incremented version draft.</li>
+                    </ul>
+                    </p>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
+                <a href="{% url 'dashboard' %}" class="btn btn-primary-custom px-4 py-2">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

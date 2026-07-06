@@ -224,8 +224,16 @@
     <div class="text-center py-5 glass-card border-0">
         <i class="bi bi-search text-muted fs-1 mb-3 block"></i>
         <h5 class="text-white">No projects found.</h5>
-        <p class="text-secondary small">Clear filters or initialize a new project workspace.</p>
-        <a href="{% url 'project_create' %}" class="btn btn-primary-custom mt-2">Create New Project</a>
+        <p class="text-secondary small mb-3">Clear filters, create a project, or initialize pre-completed demo workspaces.</p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{% url 'project_create' %}" class="btn btn-primary-custom">Create New Project</a>
+            <form method="POST" action="{% url 'project_seed_demo' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary border-0 glass-card">
+                    <i class="bi bi-cloud-download me-1"></i> Load Demo Workspaces
+                </button>
+            </form>
+        </div>
     </div>
 {% endif %}
 {% endblock %}

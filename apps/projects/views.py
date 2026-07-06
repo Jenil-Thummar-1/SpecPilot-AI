@@ -49,7 +49,7 @@ class ProjectListView(LoginRequiredMixin, ListView):
     paginate_by = 6
 
     def get_queryset(self):
-        queryset = Project.objects.filter(user=self.request.user)
+        queryset = Project.objects.filter(user=self.request.user).select_related('plan').prefetch_related('plan__steps')
         
         # 1. Search Query
         search_query = self.request.GET.get('search', '').strip()
@@ -221,7 +221,9 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'project'
 
     def get_queryset(self):
-        return Project.objects.filter(user=self.request.user)
+        return Project.objects.filter(user=self.request.user).select_related('plan').prefetch_related(
+            'plan__steps', 'activities', 'versions', 'artifacts__step', 'exports'
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -368,4 +370,14 @@ class ProjectTimelineView(LoginRequiredMixin, DetailView):
         ).order_by('-created_at')
         
         return context
+
+class SeedDemoProjectsView(LoginRequiredMixin, View):
+    """
+    Triggers seeding of 3 pre-completed demo workspaces.
+    """
+    def post(self, request, *args, **kwargs):
+        ProjectService.seed_demo_projects(request.user)
+        messages.success(request, "Demo workspaces initialized! Explore HMS, AI HRMS, and E-Commerce platforms immediately.")
+        return redirect('dashboard')
+
 

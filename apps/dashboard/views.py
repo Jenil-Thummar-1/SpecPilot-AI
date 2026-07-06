@@ -157,3 +157,19 @@ class PromptLibraryView(LoginRequiredMixin, TemplateView):
             'Deployment Planning': prompts_library.DEPLOYMENT_PROMPT,
         }
         return context
+
+class AboutView(TemplateView):
+    template_name = 'dashboard/about.html'
+
+class FeaturesView(TemplateView):
+    template_name = 'dashboard/features.html'
+
+class DocsView(TemplateView):
+    template_name = 'dashboard/docs.html'
+
+class PrivacyView(TemplateView):
+    template_name = 'dashboard/privacy.html'
+
+class TermsView(TemplateView):
+    template_name = 'dashboard/terms.html'
+

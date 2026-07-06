@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy - SpecPilot AI{% endblock %}
+{% block page_title %}Privacy Policy{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="glass-panel border-0">
+            <h3 class="text-white fw-bold mb-3">Privacy & Data Governance</h3>
+            <p class="text-secondary mb-5">Last updated: July 06, 2026</p>
+
+            <div class="d-flex flex-column gap-4 text-secondary" style="font-size: 0.9rem; text-align: justify;">
+                <div>
+                    <h5 class="text-white fw-bold">1. Data Collection Scope</h5>
+                    <p class="mb-0">SpecPilot AI is a locally hosted/sandboxed platform. We do not transmit workspace schemas, databases design structures, or project scopes to third-party tracking portals. All databases records and logs are stored in your configured SQLite database instance.</p>
+                </div>
+
+                <div>
+                    <h5 class="text-white fw-bold">2. LLM Services Integration</h5>
+                    <p class="mb-0">To generate specifications, prompt payloads are sent to Google's Gemini API endpoints. When using your custom API Key override, requests are governed by Google AI Studio's terms of service. No proprietary parameters are cached on public servers.</p>
+                </div>
+
+                <div>
+                    <h5 class="text-white fw-bold">3. Session Cookies & Authentication</h5>
+                    <p class="mb-0">Local storage and session cookies are utilized to manage authentication states, custom API overrides, and theme configurations.</p>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-end border-top mt-5 pt-4" style="border-color: rgba(255,255,255,0.05);">
+                <a href="{% url 'dashboard' %}" class="btn btn-primary-custom px-4 py-2">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

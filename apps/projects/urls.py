@@ -3,13 +3,14 @@ from apps.projects.views import (
     ProjectListView, ProjectCreateView, ProjectDetailView, 
     ProjectUpdateView, ProjectDeleteView, ProjectArchiveView, 
     ProjectDuplicateView, ProjectVersionRestoreView, ProjectTimelineView,
-    run_plan_step_view, export_project_view
+    run_plan_step_view, export_project_view, SeedDemoProjectsView
 )
 
 urlpatterns = [
     # Main project listing & creation
     path('', ProjectListView.as_view(), name='project_list'),
     path('create/', ProjectCreateView.as_view(), name='project_create'),
+    path('seed-demo/', SeedDemoProjectsView.as_view(), name='project_seed_demo'),
     
     # Detail and CRUD modifications
     path('<int:project_id>/', ProjectDetailView.as_view(), name='project_detail'),
