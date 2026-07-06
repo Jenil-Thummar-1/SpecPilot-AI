@@ -196,6 +196,24 @@ class ProjectService:
         return project
 
     @staticmethod
+    def unarchive_project(project_id, user):
+        """
+        Restores an archived project back to PLANNING status.
+        """
+        project = Project.objects.get(id=project_id, user=user)
+        project.status = PROJECT_STATUS_PLANNING
+        project.save()
+
+        ActivityLog.objects.create(
+            project=project,
+            action_type="EDITED",
+            description="Project unarchived and restored to planning status.",
+            user=user
+        )
+        logger.info(f"Project '{project.title}' has been unarchived.")
+        return project
+
+    @staticmethod
     def delete_project(project_id, user):
         """
         Deletes project.

@@ -4,84 +4,85 @@
 {% block page_title %}Planning Workspace{% endblock %}
 
 {% block content %}
-<!-- Top Row: Horizontal Milestones Workflow Track -->
+<!-- Row 1: Project Metadata Overview (Horizontal Header Card, Full Width, Side me kuch nahi) -->
 <div class="row g-4 mb-4">
     <div class="col-12">
         <div class="glass-card p-4 border-0">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <div>
-                    <h5 class="text-white fw-bold mb-1" style="font-size: 0.98rem; letter-spacing: -0.015em;">Planning Milestones Workflow</h5>
-                    <p class="text-secondary small mb-0">Follow the sequential 14-stage agent pipeline to compile a verified production specification blueprint.</p>
+            <div class="row g-4">
+                <!-- Left: Title, Description -->
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="badge bg-primary-glow text-primary text-uppercase" style="font-size: 0.68rem;">{{ project.get_category_display }}</span>
+                        <span class="text-secondary small fw-semibold">Version {{ project.current_version }}</span>
+                    </div>
+                    <h4 class="text-white fw-bold mb-2" style="letter-spacing: -0.02em;">{{ project.title }}</h4>
+                    <p class="text-accent small fw-semibold mb-3">{{ project.short_description }}</p>
+                    <p class="text-secondary small mb-0" style="text-align: justify; line-height: 1.5; opacity: 0.85;">{{ project.description }}</p>
                 </div>
-                <span class="text-secondary small d-flex align-items-center gap-1.5" style="font-size: 0.75rem; opacity: 0.8;">
-                    Scroll horizontally <i class="bi bi-arrow-right"></i>
-                </span>
-            </div>
-            
-            <div class="d-flex gap-3 overflow-x-auto pb-2.5 workflow-scroll-container" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">
-                {% for step in steps %}
-                    <div class="flex-shrink-0 workflow-step-card p-3 rounded {% if step.status == 'COMPLETED' %}step-completed{% elif step.status == 'RUNNING' %}step-running{% elif step.status == 'FAILED' %}step-failed{% else %}step-pending{% endif %}" 
-                         style="width: 250px; background: rgba(255, 255, 255, 0.012); border: 1px solid var(--card-border); scroll-snap-align: start; transition: var(--transition-smooth);">
-                        
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold text-white" style="font-size: 0.75rem; letter-spacing: 0.02em;">Phase {{ step.order }}</span>
-                            <span class="badge {% if step.status == 'COMPLETED' %}bg-success-glow text-success{% elif step.status == 'RUNNING' %}bg-warning-glow text-warning{% elif step.status == 'FAILED' %}bg-danger-glow text-danger{% else %}bg-secondary-glow text-secondary{% endif %}" style="font-size: 0.58rem; padding: 0.25em 0.5em;">
-                                {{ step.get_status_display }}
-                            </span>
+                
+                <!-- Right: Technical Details Grid -->
+                <div class="col-lg-5">
+                    <div class="p-3 rounded h-100" style="background: rgba(255, 255, 255, 0.012); border: 1px solid var(--card-border); font-size: 0.82rem;">
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.04) !important;">
+                            <span class="text-muted">Target Users:</span>
+                            <span class="text-white text-end fw-semibold" style="max-width: 200px;">{{ project.target_users|default:"General Audience" }}</span>
                         </div>
-                        
-                        <h6 class="text-white fw-bold mb-1 text-truncate" style="font-size: 0.78rem;" title="{{ step.title }}">{{ step.title }}</h6>
-                        <p class="text-secondary mb-2 text-truncate-2-lines" style="font-size: 0.7rem; line-height: 1.4; opacity: 0.8; height: 32px;">{{ step.description }}</p>
-                        
-                        <div class="d-flex align-items-center gap-2 text-muted mb-2.5" style="font-size: 0.65rem;">
-                            <span><i class="bi bi-clock me-0.5"></i>{{ step.estimated_duration_minutes }} min</span>
-                            {% if step.dependencies_str %}
-                                <span class="text-truncate" style="max-width: 100px;"><i class="bi bi-link-45deg"></i>Dep: Ph {{ step.dependencies_str }}</span>
-                            {% endif %}
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.04) !important;">
+                            <span class="text-muted">Tech Stack:</span>
+                            <span class="text-white text-end fw-semibold" style="max-width: 200px;">{{ project.tech_stack|default:"Not Configured" }}</span>
                         </div>
-                        
-                        <div class="d-flex align-items-center justify-content-between border-top pt-2" style="border-color: rgba(255,255,255,0.05) !important;">
-                            <span class="text-muted" style="font-size: 0.65rem;">
-                                {% if step.status == 'COMPLETED' %}
-                                    <span class="text-success fw-semibold"><i class="bi bi-patch-check-fill"></i> Success</span>
-                                {% elif step.status == 'RUNNING' %}
-                                    <span class="text-warning small"><span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px;"></span> Thinking...</span>
-                                {% else %}
-                                    <span>Pending</span>
-                                {% endif %}
-                            </span>
-                            
-                            {% if step.status == 'COMPLETED' %}
-                                <!-- Finished Step -->
-                            {% else %}
-                                {% with latest_art=step.generated_artifacts.last %}
-                                    {% if latest_art and not latest_art.is_approved %}
-                                        <a href="{% url 'artifact_detail' latest_art.id %}" class="btn btn-sm btn-outline-warning py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
-                                            Review
-                                        </a>
-                                    {% elif step.status == 'RUNNING' %}
-                                        <!-- Running -->
-                                    {% else %}
-                                        <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
-                                            Run
-                                        </a>
-                                    {% endif %}
-                                {% endwith %}
-                            {% endif %}
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom" style="border-color: rgba(255,255,255,0.04) !important;">
+                            <span class="text-muted">Architecture:</span>
+                            <span class="text-white fw-semibold">{{ project.get_target_architecture_display }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Deployment:</span>
+                            <span class="text-white fw-semibold">{{ project.deployment_preference }}</span>
                         </div>
                     </div>
-                {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Bottom: Action Buttons -->
+            <div class="d-flex flex-wrap align-items-center gap-2 justify-content-between mt-4 pt-3 pb-3" style="border-top: 1px solid rgba(255,255,255,0.07); border-bottom: 1px solid rgba(255,255,255,0.07);">
+                <a href="{% url 'project_timeline' project.id %}" class="btn btn-sm btn-secondary-custom px-3 py-1.5 border-0 d-flex align-items-center gap-1">
+                    <i class="bi bi-clock-history"></i> Audit Log
+                </a>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-secondary-custom px-3 py-1.5 border-0 d-flex align-items-center gap-1">
+                        <i class="bi bi-pencil-square"></i> Edit Settings
+                    </a>
+                    
+                    {% if project.status != 'ARCHIVED' %}
+                        <form method="POST" action="{% url 'project_archive' project.id %}" class="d-inline m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-warning px-3 py-1.5 border-0 d-flex align-items-center gap-1">
+                                <i class="bi bi-archive"></i> Archive Project
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{% url 'project_unarchive' project.id %}" class="d-inline m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm px-3 py-1.5 border-0 d-flex align-items-center gap-1" style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25) !important; color: #4ade80;">
+                                <i class="bi bi-archive-fill"></i> Unarchive Project
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'project_delete' project.id %}" class="btn btn-sm btn-outline-danger px-3 py-1.5 border-0 d-flex align-items-center gap-1">
+                        <i class="bi bi-trash"></i> Delete Project
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Main Workspace Columns -->
-<div class="row g-4">
-    <!-- Left Workspace Column: Generated Spec Blueprints, Document Compilers, and History -->
+<!-- Row 2: Generated Spec Blueprints & Compile/Export Side-by-Side -->
+<div class="row g-4 mb-4">
+    <!-- Left: Generated Spec Blueprints Tab Viewer -->
     <div class="col-lg-8">
-        <!-- Generated spec artifacts tab view panel (Primary workspace focus) -->
-        <div class="glass-card p-4 mb-4 border-0">
+        <div class="glass-card p-4 border-0 h-100">
             <h5 class="text-white fw-bold mb-4" style="letter-spacing: -0.015em;">Generated Spec Blueprints</h5>
             
             {% if artifacts %}
@@ -162,66 +163,183 @@
                 </div>
             {% endif %}
         </div>
+    </div>
 
-        <!-- Compiled Exporter panel (Collapsible) -->
-        <details class="glass-card p-4 mb-4 border-0" {% if artifacts %}open{% endif %}>
-            <summary class="d-flex align-items-center justify-content-between text-white fw-bold" style="cursor: pointer; user-select: none; font-size: 0.95rem; letter-spacing: -0.015em;">
-                <span>Compile & Export Project Blueprint</span>
-                <i class="bi bi-chevron-down summary-arrow text-muted fs-6"></i>
-            </summary>
-            
-            <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+    <!-- Right: Compile & Export Project Blueprint -->
+    <div class="col-lg-4">
+        <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h5 class="text-white fw-bold mb-3" style="font-size: 0.95rem; letter-spacing: -0.010em;">Compile & Export Blueprint</h5>
                 <p class="text-secondary small mb-4">Aggregates and formats all compiled planning specifications into unified distribution copies.</p>
                 
-                <form method="POST" action="{% url 'export_project' project.id %}" class="row g-3 align-items-center m-0">
+                <form method="POST" action="{% url 'export_project' project.id %}" class="d-flex flex-column m-0">
                     {% csrf_token %}
-                    <div class="col-md-7">
-                        <select name="format" class="form-select form-control-custom" required>
-                            <option value="MARKDOWN">Markdown Document (.md)</option>
-                            <option value="PDF">Formatted PDF Blueprint (.pdf)</option>
-                            <option value="JSON">Structured JSON Spec Schema (.json)</option>
-                            <option value="ZIP">ZIP Package Archive (.zip)</option>
-                        </select>
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small fw-semibold mb-3">Choose Export Format</label>
+                        <div class="d-flex flex-column gap-2.5">
+                            <!-- Option 1: Markdown -->
+                            <label class="sp-radio-card d-flex align-items-center justify-content-between p-3 rounded">
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="radio" name="format" value="MARKDOWN" checked class="form-check-input sp-custom-radio m-0" required>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-white fw-bold" style="font-size: 0.82rem; line-height: 1.25;">Markdown Document</span>
+                                        <span class="text-muted mt-0.5" style="font-size: 0.72rem; line-height: 1.2;">Clean raw .md source blueprint</span>
+                                    </div>
+                                </div>
+                                <i class="bi bi-filetype-md text-primary fs-5"></i>
+                            </label>
+
+                            <!-- Option 2: PDF -->
+                            <label class="sp-radio-card d-flex align-items-center justify-content-between p-3 rounded">
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="radio" name="format" value="PDF" class="form-check-input sp-custom-radio m-0">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-white fw-bold" style="font-size: 0.82rem; line-height: 1.25;">Formatted PDF Blueprint</span>
+                                        <span class="text-muted mt-0.5" style="font-size: 0.72rem; line-height: 1.2;">Styled print-ready document</span>
+                                    </div>
+                                </div>
+                                <i class="bi bi-filetype-pdf text-danger fs-5"></i>
+                            </label>
+
+                            <!-- Option 3: JSON -->
+                            <label class="sp-radio-card d-flex align-items-center justify-content-between p-3 rounded">
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="radio" name="format" value="JSON" class="form-check-input sp-custom-radio m-0">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-white fw-bold" style="font-size: 0.82rem; line-height: 1.25;">Structured JSON Schema</span>
+                                        <span class="text-muted mt-0.5" style="font-size: 0.72rem; line-height: 1.2;">Machine-readable system spec</span>
+                                    </div>
+                                </div>
+                                <i class="bi bi-filetype-json text-warning fs-5"></i>
+                            </label>
+
+                            <!-- Option 4: ZIP -->
+                            <label class="sp-radio-card d-flex align-items-center justify-content-between p-3 rounded">
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="radio" name="format" value="ZIP" class="form-check-input sp-custom-radio m-0">
+                                    <div class="d-flex flex-column">
+                                        <span class="text-white fw-bold" style="font-size: 0.82rem; line-height: 1.25;">ZIP Package Archive</span>
+                                        <span class="text-muted mt-0.5" style="font-size: 0.72rem; line-height: 1.2;">Compressed codebase assets</span>
+                                    </div>
+                                </div>
+                                <i class="bi bi-file-zip-fill text-info fs-5"></i>
+                            </label>
+                        </div>
                     </div>
-                    <div class="col-md-5">
-                        <button type="submit" class="btn btn-primary-custom w-100 py-2" {% if not artifacts %}disabled{% endif %}>
-                            <i class="bi bi-file-earmark-arrow-down-fill me-1.5"></i> Compile Output
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2.5" {% if not artifacts %}disabled{% endif %}>
+                        <i class="bi bi-file-earmark-arrow-down-fill me-1.5"></i> Compile Output
+                    </button>
                 </form>
                 
                 {% if not artifacts %}
-                    <div class="form-text text-danger mt-2 small" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill"></i> Execute at least one planning task to unlock compilers.</div>
-                {% endif %}
-
-                <!-- Archive generated exports list -->
-                {% if export_jobs %}
-                    <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
-                        <h6 class="text-white fw-semibold small mb-2">Compiled Download Archives</h6>
-                        <div class="d-flex flex-column gap-2">
-                            {% for job in export_jobs %}
-                                <div class="d-flex align-items-center justify-content-between p-2.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="bi {% if job.export_format == 'PDF' %}bi-filetype-pdf text-danger{% elif job.export_format == 'JSON' %}bi-filetype-json text-warning{% elif job.export_format == 'ZIP' %}bi-file-zip-fill text-info{% else %}bi-file-earmark-markdown-fill text-primary{% endif %}"></i>
-                                        <span class="small text-secondary" style="font-size: 0.75rem;">{{ job.export_format }} compiled blueprint - {{ job.created_at|date:"M d, H:i" }}</span>
-                                    </div>
-                                    {% if job.status == 'SUCCEEDED' %}
-                                        <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0.5 text-decoration-none" style="font-size: 0.78rem;">
-                                            <i class="bi bi-download"></i> Download
-                                        </a>
-                                    {% else %}
-                                        <span class="small text-danger">Compilation Failed</span>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
+                    <div class="form-text text-danger mt-3 small" style="font-size: 0.75rem;"><i class="bi bi-info-circle-fill"></i> Execute at least one planning task to unlock compilers.</div>
                 {% endif %}
             </div>
-        </details>
 
-        <!-- Activity History logs timeline (Collapsed by default) -->
-        <details class="glass-card p-4 border-0">
+            <!-- Archive generated exports list -->
+            {% if export_jobs %}
+                <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
+                    <h6 class="text-white fw-semibold small mb-2">Compiled Download Archives</h6>
+                    <div class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
+                        {% for job in export_jobs %}
+                            <div class="d-flex align-items-center justify-content-between p-2.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border);">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi {% if job.export_format == 'PDF' %}bi-filetype-pdf text-danger{% elif job.export_format == 'JSON' %}bi-filetype-json text-warning{% elif job.export_format == 'ZIP' %}bi-file-zip-fill text-info{% else %}bi-file-earmark-markdown-fill text-primary{% endif %}"></i>
+                                    <span class="small text-secondary" style="font-size: 0.72rem;">{{ job.export_format }} ({{ job.created_at|date:"M d, H:i" }})</span>
+                                </div>
+                                {% if job.status == 'SUCCEEDED' %}
+                                    <a href="{{ job.download_file.url }}" download class="btn btn-sm btn-outline-success border-0 px-2 py-0.5 text-decoration-none" style="font-size: 0.78rem;">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="small text-danger" style="font-size: 0.7rem;">Failed</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Planning Milestones Workflow (Horizontal Scroll, Full Width) -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="glass-card p-4 border-0">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="text-white fw-bold mb-1" style="font-size: 0.98rem; letter-spacing: -0.015em;">Planning Milestones Workflow</h5>
+                    <p class="text-secondary small mb-0">Follow the sequential 14-stage agent pipeline to compile a verified production specification blueprint.</p>
+                </div>
+                <span class="text-secondary small d-flex align-items-center gap-1.5" style="font-size: 0.75rem; opacity: 0.8;">
+                    Scroll horizontally <i class="bi bi-arrow-right"></i>
+                </span>
+            </div>
+            
+            <div class="d-flex gap-3 overflow-x-auto pb-2.5 workflow-scroll-container" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">
+                {% for step in steps %}
+                    <div class="flex-shrink-0 workflow-step-card p-3 rounded {% if step.status == 'COMPLETED' %}step-completed{% elif step.status == 'RUNNING' %}step-running{% elif step.status == 'FAILED' %}step-failed{% else %}step-pending{% endif %}" 
+                         style="width: 250px; background: rgba(255, 255, 255, 0.012); border: 1px solid var(--card-border); scroll-snap-align: start; transition: var(--transition-smooth);">
+                        
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold text-white" style="font-size: 0.75rem; letter-spacing: 0.02em;">Phase {{ step.order }}</span>
+                            <span class="badge {% if step.status == 'COMPLETED' %}bg-success-glow text-success{% elif step.status == 'RUNNING' %}bg-warning-glow text-warning{% elif step.status == 'FAILED' %}bg-danger-glow text-danger{% else %}bg-secondary-glow text-secondary{% endif %}" style="font-size: 0.58rem; padding: 0.25em 0.5em;">
+                                {{ step.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <h6 class="text-white fw-bold mb-1 text-truncate" style="font-size: 0.78rem;" title="{{ step.title }}">{{ step.title }}</h6>
+                        <p class="text-secondary mb-2 text-truncate-2-lines" style="font-size: 0.7rem; line-height: 1.4; opacity: 0.8; height: 32px;">{{ step.description }}</p>
+                        
+                        <div class="d-flex align-items-center gap-2 text-muted mb-2.5" style="font-size: 0.65rem;">
+                            <span><i class="bi bi-clock me-0.5"></i>{{ step.estimated_duration_minutes }} min</span>
+                            {% if step.dependencies_str %}
+                                <span class="text-truncate" style="max-width: 100px;"><i class="bi bi-link-45deg"></i>Dep: Ph {{ step.dependencies_str }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between border-top pt-2" style="border-color: rgba(255,255,255,0.05) !important;">
+                            <span class="text-muted" style="font-size: 0.65rem;">
+                                {% if step.status == 'COMPLETED' %}
+                                    <span class="text-success fw-semibold"><i class="bi bi-patch-check-fill"></i> Success</span>
+                                {% elif step.status == 'RUNNING' %}
+                                    <span class="text-warning small"><span class="spinner-border spinner-border-sm" style="width: 8px; height: 8px;"></span> Thinking...</span>
+                                {% else %}
+                                    <span>Pending</span>
+                                {% endif %}
+                            </span>
+                            
+                            {% if step.status == 'COMPLETED' %}
+                                <!-- Finished Step -->
+                            {% else %}
+                                {% with latest_art=step.generated_artifacts.last %}
+                                    {% if latest_art and not latest_art.is_approved %}
+                                        <a href="{% url 'artifact_detail' latest_art.id %}" class="btn btn-sm btn-outline-warning py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
+                                            Review
+                                        </a>
+                                    {% elif step.status == 'RUNNING' %}
+                                        <!-- Running -->
+                                    {% else %}
+                                        <a href="{% url 'run_plan_step' project.id step.id %}" class="btn btn-sm btn-primary-custom py-0.5 px-2 text-decoration-none" style="font-size: 0.62rem; padding: 2px 6px !important; border-radius: 4px;">
+                                            Run
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: Workspace Activity History & Planning Status / Backups (Last section) -->
+<div class="row g-4 align-items-stretch">
+    <!-- Left: Workspace Activity History -->
+    <div class="col-lg-8 d-flex">
+        <details class="glass-card p-4 border-0 w-100" open>
             <summary class="d-flex align-items-center justify-content-between text-white fw-bold" style="cursor: pointer; user-select: none; font-size: 0.95rem; letter-spacing: -0.015em;">
                 <span>Workspace Activity History</span>
                 <i class="bi bi-chevron-down summary-arrow text-muted fs-6"></i>
@@ -229,7 +347,7 @@
             
             <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
                 {% if activities %}
-                    <div class="d-flex flex-column gap-3.5" style="max-height: 250px; overflow-y: auto;">
+                    <div class="d-flex flex-column gap-3" style="max-height: 380px; overflow-y: auto;">
                         {% for act in activities %}
                             <div class="d-flex align-items-start gap-3 p-2.5 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.015);">
                                 <div class="rounded-circle bg-primary-glow p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; flex-shrink: 0;">
@@ -263,8 +381,8 @@
         </details>
     </div>
 
-    <!-- Right Workspace Column: Project Stats, Metadata Info, and Snapshots Rollback -->
-    <div class="col-lg-4">
+    <!-- Right: Planning Status & Workspace Backups -->
+    <div class="col-lg-4 d-flex flex-column">
         <!-- Planning Status Card -->
         <div class="glass-card p-4 mb-4 border-0">
             <h5 class="text-white fw-bold mb-3" style="font-size: 0.95rem; letter-spacing: -0.010em;">Planning Status</h5>
@@ -304,47 +422,8 @@
             </div>
         </div>
 
-        <!-- Project Metadata Overview Card -->
-        <div class="glass-card p-4 mb-4 border-0">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="badge bg-primary-glow text-primary text-uppercase" style="font-size: 0.68rem;">{{ project.get_category_display }}</span>
-                <span class="text-secondary small fw-semibold">Version {{ project.current_version }}</span>
-            </div>
-            <h5 class="text-white fw-bold mb-1" style="font-size: 1.05rem; letter-spacing: -0.02em;">{{ project.title }}</h5>
-            <p class="text-accent small fw-semibold mb-3">{{ project.short_description }}</p>
-            <p class="text-secondary small mb-4" style="text-align: justify; line-height: 1.5; opacity: 0.85;">{{ project.description }}</p>
-            
-            <div class="border-top pt-3" style="border-color: rgba(255,255,255,0.06) !important; font-size: 0.82rem;">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Target Users:</span>
-                    <span class="text-white text-end" style="max-width: 180px;">{{ project.target_users|default:"General Audience" }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Tech Stack:</span>
-                    <span class="text-white text-end" style="max-width: 180px;">{{ project.tech_stack|default:"Not Configured" }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Architecture:</span>
-                    <span class="text-white">{{ project.get_target_architecture_display }}</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted">Deployment:</span>
-                    <span class="text-white">{{ project.deployment_preference }}</span>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2 justify-content-end mt-4">
-                <a href="{% url 'project_timeline' project.id %}" class="btn btn-sm btn-secondary-custom px-3 py-1.5 border-0 d-flex align-items-center gap-1">
-                    <i class="bi bi-clock-history"></i> Audit Log
-                </a>
-                <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-secondary-custom px-3 py-1.5 border-0 d-flex align-items-center gap-1">
-                    <i class="bi bi-pencil-square"></i> Edit
-                </a>
-            </div>
-        </div>
-
         <!-- Version Snapshots rollback control -->
-        <details class="glass-card p-4 mb-4 border-0">
+        <details class="glass-card p-4 border-0 flex-grow-1" open>
             <summary class="d-flex align-items-center justify-content-between text-white fw-bold" style="cursor: pointer; user-select: none; font-size: 0.95rem; letter-spacing: -0.010em;">
                 <span>Workspace Backups</span>
                 <i class="bi bi-chevron-down summary-arrow text-muted fs-6"></i>
@@ -353,7 +432,7 @@
             <div class="mt-3 pt-3 border-top" style="border-color: rgba(255,255,255,0.06) !important;">
                 <p class="text-secondary small mb-3">Restore workspace parameters back to a previous backup snapshot.</p>
                 {% if versions %}
-                    <div class="d-flex flex-column gap-2" style="max-height: 250px; overflow-y: auto;">
+                    <div class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto;">
                         {% for ver in versions %}
                             <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background: rgba(255,255,255,0.01); border: 1px solid var(--card-border); font-size: 0.8rem;">
                                 <div>

@@ -419,6 +419,109 @@
   }
 
   /* ---------------------------------------------------------------- *
+   * 15. CUSTOM PREMIUM DROPDOWNS
+   * ---------------------------------------------------------------- */
+  function initCustomDropdowns() {
+    var selects = document.querySelectorAll('select.form-select-custom');
+    selects.forEach(function (select) {
+      if (select.dataset.customized) return;
+      select.dataset.customized = 'true';
+
+      select.style.display = 'none';
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'sp-custom-select-wrapper';
+      select.parentNode.insertBefore(wrapper, select);
+      wrapper.appendChild(select);
+
+      var trigger = document.createElement('div');
+      trigger.className = 'sp-custom-select-trigger';
+      trigger.setAttribute('tabindex', '0');
+      
+      var selectedOpt = select.options[select.selectedIndex] || select.options[0];
+      var labelSpan = document.createElement('span');
+      labelSpan.className = 'sp-selected-label';
+      labelSpan.textContent = selectedOpt ? selectedOpt.textContent : '';
+      trigger.appendChild(labelSpan);
+
+      var icon = document.createElement('i');
+      icon.className = 'bi bi-chevron-down text-secondary ms-2';
+      icon.style.fontSize = '0.75rem';
+      trigger.appendChild(icon);
+      wrapper.appendChild(trigger);
+
+      var menu = document.createElement('div');
+      menu.className = 'sp-custom-select-options glass-card p-1.5 d-none';
+      
+      Array.from(select.options).forEach(function (opt) {
+        var optionDiv = document.createElement('div');
+        optionDiv.className = 'sp-custom-option';
+        optionDiv.dataset.value = opt.value;
+        optionDiv.textContent = opt.textContent;
+        if (opt.selected) {
+          optionDiv.classList.add('active');
+        }
+
+        optionDiv.addEventListener('click', function (e) {
+          e.stopPropagation();
+          select.value = opt.value;
+          select.dispatchEvent(new Event('change'));
+          
+          labelSpan.textContent = opt.textContent;
+
+          menu.querySelectorAll('.sp-custom-option').forEach(function (node) {
+            node.classList.remove('active');
+          });
+          optionDiv.classList.add('active');
+
+          menu.classList.add('d-none');
+          wrapper.classList.remove('open');
+        });
+
+        menu.appendChild(optionDiv);
+      });
+
+      wrapper.appendChild(menu);
+
+      trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        
+        document.querySelectorAll('.sp-custom-select-wrapper').forEach(function (other) {
+          if (other !== wrapper) {
+            other.classList.remove('open');
+            var otherMenu = other.querySelector('.sp-custom-select-options');
+            if (otherMenu) otherMenu.classList.add('d-none');
+          }
+        });
+
+        var isOpen = !menu.classList.contains('d-none');
+        if (isOpen) {
+          menu.classList.add('d-none');
+          wrapper.classList.remove('open');
+        } else {
+          menu.classList.remove('d-none');
+          wrapper.classList.add('open');
+        }
+      });
+      
+      trigger.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          trigger.click();
+        }
+      });
+    });
+
+    document.addEventListener('click', function () {
+      document.querySelectorAll('.sp-custom-select-wrapper').forEach(function (wrapper) {
+        wrapper.classList.remove('open');
+        var menu = wrapper.querySelector('.sp-custom-select-options');
+        if (menu) menu.classList.add('d-none');
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------------- *
    * INIT
    * ---------------------------------------------------------------- */
   document.addEventListener('DOMContentLoaded', function () {
@@ -437,5 +540,6 @@
     initPasswordReveal();
     initPasswordStrength();
     initCopyCode();
+    initCustomDropdowns();
   });
 })();

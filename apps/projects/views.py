@@ -255,6 +255,18 @@ class ProjectArchiveView(LoginRequiredMixin, View):
             messages.error(request, f"Failed to archive project: {str(e)}")
         return redirect('project_detail', project_id=project_id)
 
+class ProjectUnarchiveView(LoginRequiredMixin, View):
+    """
+    Restores an archived project back to planning status.
+    """
+    def post(self, request, project_id):
+        try:
+            ProjectService.unarchive_project(project_id, request.user)
+            messages.success(request, "Project successfully unarchived and restored to planning.")
+        except Exception as e:
+            messages.error(request, f"Failed to unarchive project: {str(e)}")
+        return redirect('project_detail', project_id=project_id)
+
 class ProjectDuplicateView(LoginRequiredMixin, View):
     """
     Clones a project details and planning states.

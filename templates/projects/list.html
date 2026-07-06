@@ -43,19 +43,19 @@
 </details>
 
 <!-- Search, Filters, and Sorting Controls -->
-<div class="glass-card p-4 mb-4 border-0">
-    <form method="GET" class="row g-3">
+<div class="glass-card p-4 mb-4 border-0 position-relative" style="z-index: 10;">
+    <form method="GET" class="d-flex flex-wrap flex-md-nowrap gap-2 align-items-center w-100">
         <!-- Search bar -->
-        <div class="col-lg-4">
-            <div class="input-group">
-                <span class="input-group-text bg-transparent border-end-0" style="border-color: rgba(255, 255, 255, 0.05);"><i class="bi bi-search text-secondary"></i></span>
-                <input type="text" name="search" class="form-control form-control-custom ps-0 border-start-0" placeholder="Search project title or ideas..." value="{{ active_search }}">
+        <div class="flex-grow-1" style="min-width: 120px;">
+            <div class="sp-search-bar-wrapper">
+                <i class="bi bi-search text-secondary"></i>
+                <input type="text" name="search" class="form-control form-control-custom" placeholder="Search project title or ideas..." value="{{ active_search }}">
             </div>
         </div>
 
         <!-- Filter Status -->
-        <div class="col-sm-6 col-md-3 col-lg-2">
-            <select name="status" class="form-select form-control-custom">
+        <div style="width: 130px; flex-shrink: 0;">
+            <select name="status" class="form-select form-select-custom">
                 <option value="">Status: All Active</option>
                 {% for code, label in status_choices %}
                     <option value="{{ code }}" {% if code == active_status %}selected{% endif %}>{{ label }}</option>
@@ -64,8 +64,8 @@
         </div>
 
         <!-- Filter Category -->
-        <div class="col-sm-6 col-md-3 col-lg-2">
-            <select name="category" class="form-select form-control-custom">
+        <div style="width: 130px; flex-shrink: 0;">
+            <select name="category" class="form-select form-select-custom">
                 <option value="">Category: All</option>
                 {% for code, label in template_choices %}
                     <option value="{{ code }}" {% if code == active_category %}selected{% endif %}>{{ label }}</option>
@@ -74,8 +74,8 @@
         </div>
 
         <!-- Filter Architecture -->
-        <div class="col-sm-6 col-md-3 col-lg-2">
-            <select name="architecture" class="form-select form-control-custom">
+        <div style="width: 130px; flex-shrink: 0;">
+            <select name="architecture" class="form-select form-select-custom">
                 <option value="">Architecture: All</option>
                 {% for code, label in arch_choices %}
                     <option value="{{ code }}" {% if code == active_architecture %}selected{% endif %}>{{ label }}</option>
@@ -84,8 +84,8 @@
         </div>
 
         <!-- Sorting -->
-        <div class="col-sm-6 col-md-3 col-lg-2">
-            <select name="sort" class="form-select form-control-custom">
+        <div style="width: 130px; flex-shrink: 0;">
+            <select name="sort" class="form-select form-select-custom">
                 <option value="-updated_at" {% if active_sort == '-updated_at' %}selected{% endif %}>Sort: Last Updated</option>
                 <option value="-created_at" {% if active_sort == '-created_at' %}selected{% endif %}>Sort: Newly Created</option>
                 <option value="title" {% if active_sort == 'title' %}selected{% endif %}>Sort: Title (A-Z)</option>
@@ -93,10 +93,14 @@
             </select>
         </div>
 
-        <!-- Filter triggers -->
-        <div class="col-12 d-flex gap-2 justify-content-end align-items-center mt-3">
-            <a href="{% url 'project_list' %}" class="btn btn-secondary-custom border-0 py-1.5 px-3 d-flex align-items-center text-decoration-none">Reset</a>
-            <button type="submit" class="btn btn-primary-custom py-1.5 px-4">Apply Filters</button>
+        <!-- Actions (Reset + Apply) -->
+        <div class="d-flex gap-2 align-items-center flex-shrink-0" style="min-height: 38px;">
+            <a href="{% url 'project_list' %}" class="btn btn-secondary-custom p-0 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;" title="Reset Filters">
+                <i class="bi bi-arrow-counterclockwise" style="font-size: 0.95rem; margin: 0 !important; transform: none !important;"></i>
+            </a>
+            <button type="submit" class="btn btn-primary-custom p-0 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;" title="Apply Filters">
+                <i class="bi bi-check-lg" style="font-size: 1rem; margin: 0 !important; transform: none !important;"></i>
+            </button>
         </div>
     </form>
 </div>
@@ -109,8 +113,7 @@
                 <div class="glass-card p-4 border-0 h-100 d-flex flex-column justify-content-between" style="background: rgba(255,255,255,0.012);">
                     <div>
                         <!-- Header metadata -->
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <span class="badge bg-primary-glow text-primary" style="font-size: 0.7rem;">{{ project.get_category_display|truncatechars:20 }}</span>
+                        <div class="d-flex align-items-center justify-content-end mb-3">
                             <span class="badge {% if project.status == 'COMPLETE' %}bg-success-glow text-success{% elif project.status == 'PLANNING' %}bg-warning-glow text-warning{% elif project.status == 'ARCHIVED' %}bg-secondary-glow text-secondary{% else %}bg-secondary-glow text-secondary{% endif %}">
                                 {{ project.get_status_display }}
                             </span>
@@ -141,36 +144,10 @@
                         </div>
                         
                         <!-- Quick actions footer -->
-                        <div class="d-flex align-items-center gap-2 justify-content-between">
-                            <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary-custom px-3 py-2 small">
-                                <i class="bi bi-folder2-open me-1"></i> Open Canvas
+                        <div class="mt-3">
+                            <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary-custom w-100 py-2 d-flex align-items-center justify-content-center gap-1.5">
+                                <i class="bi bi-folder2-open"></i> Open Canvas
                             </a>
-                            
-                            <div class="d-flex gap-1">
-                                <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-outline-secondary border-0 p-1.5" title="Edit Settings">
-                                    <i class="bi bi-pencil-square fs-6"></i>
-                                </a>
-                                
-                                <form method="POST" action="{% url 'project_duplicate' project.id %}" class="d-inline m-0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary border-0 p-1.5" title="Duplicate Copy">
-                                        <i class="bi bi-copy fs-6"></i>
-                                    </button>
-                                </form>
-                                
-                                {% if project.status != 'ARCHIVED' %}
-                                    <form method="POST" action="{% url 'project_archive' project.id %}" class="d-inline m-0">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-warning border-0 p-1.5" title="Archive Project">
-                                            <i class="bi bi-archive fs-6"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-                                
-                                <a href="{% url 'project_delete' project.id %}" class="btn btn-sm btn-outline-danger border-0 p-1.5" title="Delete Project">
-                                    <i class="bi bi-trash fs-6"></i>
-                                </a>
-                            </div>
                         </div>
                     </div>
                 </div>
