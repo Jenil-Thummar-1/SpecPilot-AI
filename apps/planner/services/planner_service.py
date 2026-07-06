@@ -116,6 +116,16 @@ class PlannerService:
         )
         logger.info(f"Step '{step.title}' completed. Project overall progress: {plan.overall_progress_pct}%")
 
+        # Extract and update project knowledge store
+        project = plan.project
+        artifact = step.generated_artifacts.filter(is_approved=True).order_by('-version').first()
+        if artifact:
+            from apps.memory.services.memory_service import MemoryService
+            try:
+                MemoryService.extract_and_update_knowledge_store(project, step, artifact.content)
+            except Exception as extract_err:
+                logger.error(f"Error in knowledge extraction callback: {extract_err}")
+
     @staticmethod
     def fail_step(step, error_message=""):
         """

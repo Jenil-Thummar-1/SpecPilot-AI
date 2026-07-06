@@ -186,6 +186,10 @@ class GeminiService:
         estimated_tokens = (len(prompt) + len(system_instruction or "")) // 4
         max_request_tokens = getattr(settings, 'GEMINI_MAX_REQUEST_TOKENS', 30000)
         
+        input_str = f"{self.model_name}:{system_instruction or ''}:{prompt}"
+        prompt_fingerprint = hashlib.md5(input_str.encode('utf-8')).hexdigest()
+        cache_key = f"gemini_response_{prompt_fingerprint}"
+        
         if estimated_tokens > max_request_tokens:
             error_msg = f"Request token count estimation ({estimated_tokens}) exceeds the maximum allowed limit of {max_request_tokens} tokens. Please compress the input context."
             logger.error(error_msg)
@@ -197,21 +201,19 @@ class GeminiService:
                 "elapsed_time_ms": int((time.time() - start_time) * 1000),
                 "retry_count": 0,
                 "quota_status": "EXCEEDED",
-                "success": False
+                "success": False,
+                "cache_hit": False,
+                "fingerprint": prompt_fingerprint
             }
 
         # 2. Response Caching
-        cache_key = None
         if self.api_key and self.api_key != "dummy-api-key-for-now":
-            input_str = f"{self.model_name}:{system_instruction or ''}:{prompt}"
-            cache_hash = hashlib.md5(input_str.encode('utf-8')).hexdigest()
-            cache_key = f"gemini_response_{cache_hash}"
-            
             cached_val = cache.get(cache_key)
             if cached_val:
                 logger.info("Cache hit for Gemini request. Returning cached response.")
-                # Add elapsed time from cached return
                 cached_val["elapsed_time_ms"] = int((time.time() - start_time) * 1000)
+                cached_val["cache_hit"] = True
+                cached_val["fingerprint"] = prompt_fingerprint
                 return cached_val
 
         # Simulation Mode
@@ -226,7 +228,9 @@ class GeminiService:
                 "elapsed_time_ms": elapsed_time_ms,
                 "retry_count": 0,
                 "quota_status": "OK",
-                "success": True
+                "success": True,
+                "cache_hit": False,
+                "fingerprint": prompt_fingerprint
             }
             return result
 
@@ -282,7 +286,9 @@ class GeminiService:
                         "elapsed_time_ms": elapsed_time_ms,
                         "retry_count": retry_attempts,
                         "quota_status": final_quota_status,
-                        "success": True
+                        "success": True,
+                        "cache_hit": False,
+                        "fingerprint": prompt_fingerprint
                     }
                     
                     # Cache result
@@ -336,7 +342,9 @@ class GeminiService:
                         "elapsed_time_ms": elapsed_time_ms,
                         "retry_count": retry_attempts,
                         "quota_status": final_quota_status,
-                        "success": True
+                        "success": True,
+                        "cache_hit": False,
+                        "fingerprint": prompt_fingerprint
                     }
                     if cache_key:
                         cache.set(cache_key, response_data, 86400)
@@ -351,7 +359,9 @@ class GeminiService:
                         "elapsed_time_ms": elapsed_time_ms,
                         "retry_count": retry_attempts,
                         "quota_status": final_quota_status,
-                        "success": False
+                        "success": False,
+                        "cache_hit": False,
+                        "fingerprint": prompt_fingerprint
                     }
             else:
                 elapsed_time_ms = int((time.time() - start_time) * 1000)
@@ -363,7 +373,9 @@ class GeminiService:
                     "elapsed_time_ms": elapsed_time_ms,
                     "retry_count": retry_attempts,
                     "quota_status": final_quota_status,
-                    "success": False
+                    "success": False,
+                    "cache_hit": False,
+                    "fingerprint": prompt_fingerprint
                 }
 
         finally:

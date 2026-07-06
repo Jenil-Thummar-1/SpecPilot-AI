@@ -406,7 +406,8 @@ class ProjectStepExecuteAJAXView(LoginRequiredMixin, View):
                     "total_output_tokens": total_output_tokens,
                     "total_duration_ms": total_time_ms,
                     "total_retries": total_retries,
-                    "quota_status": "OK"
+                    "quota_status": "OK",
+                    "diagnostics": step.metadata.get('diagnostics', {})
                 })
 
             # Execute step generation pipeline
@@ -494,7 +495,8 @@ class ProjectStepExecuteAJAXView(LoginRequiredMixin, View):
                     "total_input_tokens": total_input_tokens,
                     "total_output_tokens": total_output_tokens,
                     "total_duration_ms": total_time_ms,
-                    "total_retries": total_retries
+                    "total_retries": total_retries,
+                    "diagnostics": step.metadata.get('diagnostics', {})
                 })
             else:
                 return JsonResponse({

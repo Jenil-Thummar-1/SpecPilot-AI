@@ -253,6 +253,55 @@
                         </div>
                     </details>
                     {% endif %}
+                    {% if user.is_staff or user.is_superuser %}
+                    <!-- Collapsible Developer Diagnostics Panel -->
+                    <details class="mt-2 pt-2.5 border-top" style="border-color: rgba(255,255,255,0.06) !important;" id="devDiagnosticsDetails">
+                        <summary class="text-white fw-bold d-flex align-items-center justify-content-between" style="font-size: 0.72rem; cursor: pointer; user-select: none;">
+                            <span><i class="bi bi-shield-check text-accent me-1"></i> Developer Diagnostics</span>
+                            <i class="bi bi-chevron-down text-muted" style="font-size: 0.65rem;"></i>
+                        </summary>
+                        <div class="mt-2 text-start" style="font-size: 0.7rem; color: rgba(255,255,255,0.75);">
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Prompt Fingerprint</span>
+                                <code class="text-info font-monospace" style="font-size: 0.65rem;" id="devFingerprint">None</code>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Cache Utilization</span>
+                                <span class="badge bg-secondary-glow text-light" id="devCacheHit">No execution yet</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Estimated Tokens</span>
+                                <span class="fw-semibold text-white" id="devEstTokens">0</span> / 30,000 max
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Token Allocations</span>
+                                <div class="p-2.5 rounded font-monospace" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); font-size: 0.65rem;" id="devAllocations">
+                                    project_context: 0<br>
+                                    dependency_summaries: 0<br>
+                                    memory: 0
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Selected Dependencies</span>
+                                <ul class="ps-3 mb-0" id="devSelectedDeps" style="font-size: 0.65rem; list-style-type: square;">
+                                    <li>None selected</li>
+                                </ul>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Compressed Context</span>
+                                <ul class="ps-3 mb-0 text-warning" id="devCompressedContext" style="font-size: 0.65rem; list-style-type: square;">
+                                    <li>None compressed</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Discarded Context</span>
+                                <ul class="ps-3 mb-0 text-danger" id="devDiscardedContext" style="font-size: 0.65rem; list-style-type: square;">
+                                    <li>None discarded</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </details>
+                    {% endif %}
                 </div>
 
                 <!-- Terminal Logger Console (Shown when running/completed) -->
@@ -1001,6 +1050,82 @@ document.addEventListener("DOMContentLoaded", function() {
                             adminQuotaStatus.className = "badge bg-warning-glow text-warning";
                         } else {
                             adminQuotaStatus.className = "badge bg-danger-glow text-danger";
+                        }
+                    }
+                }
+
+                // Update Developer Diagnostics
+                const devFingerprint = document.getElementById("devFingerprint");
+                const devCacheHit = document.getElementById("devCacheHit");
+                const devEstTokens = document.getElementById("devEstTokens");
+                const devAllocations = document.getElementById("devAllocations");
+                const devSelectedDeps = document.getElementById("devSelectedDeps");
+                const devCompressedContext = document.getElementById("devCompressedContext");
+                const devDiscardedContext = document.getElementById("devDiscardedContext");
+
+                if (data.diagnostics) {
+                    const diag = data.diagnostics;
+                    if (devFingerprint && diag.fingerprint) {
+                        devFingerprint.textContent = diag.fingerprint;
+                    }
+                    if (devCacheHit) {
+                        if (diag.cache_hit) {
+                            devCacheHit.textContent = "Cache HIT";
+                            devCacheHit.className = "badge bg-success-glow text-success";
+                        } else {
+                            devCacheHit.textContent = "Cache MISS / New Generation";
+                            devCacheHit.className = "badge bg-warning-glow text-warning";
+                        }
+                    }
+                    if (diag.report) {
+                        const r = diag.report;
+                        if (devEstTokens) devEstTokens.textContent = r.total_prompt_tokens || r.total_estimated_tokens || 0;
+                        
+                        if (devAllocations && r.allocations) {
+                            let allocStr = "";
+                            for (const [k, v] of Object.entries(r.allocations)) {
+                                allocStr += `${k}: ${v} tokens<br>`;
+                            }
+                            devAllocations.innerHTML = allocStr || "No allocations logged";
+                        }
+                        
+                        if (devSelectedDeps) {
+                            devSelectedDeps.innerHTML = "";
+                            if (r.selected_dependencies && r.selected_dependencies.length > 0) {
+                                r.selected_dependencies.forEach(d => {
+                                    const li = document.createElement("li");
+                                    li.textContent = d;
+                                    devSelectedDeps.appendChild(li);
+                                });
+                            } else {
+                                devSelectedDeps.innerHTML = "<li>None selected</li>";
+                            }
+                        }
+
+                        if (devCompressedContext) {
+                            devCompressedContext.innerHTML = "";
+                            if (r.compressed_context && r.compressed_context.length > 0) {
+                                r.compressed_context.forEach(c => {
+                                    const li = document.createElement("li");
+                                    li.textContent = `${c.title} (${c.original_tokens} -> ${c.compressed_tokens} tokens)`;
+                                    devCompressedContext.appendChild(li);
+                                });
+                            } else {
+                                devCompressedContext.innerHTML = "<li>None compressed</li>";
+                            }
+                        }
+
+                        if (devDiscardedContext) {
+                            devDiscardedContext.innerHTML = "";
+                            if (r.discarded_context && r.discarded_context.length > 0) {
+                                r.discarded_context.forEach(d => {
+                                    const li = document.createElement("li");
+                                    li.textContent = `${d.title} (${d.tokens} tokens - ${d.reason})`;
+                                    devDiscardedContext.appendChild(li);
+                                });
+                            } else {
+                                devDiscardedContext.innerHTML = "<li>None discarded</li>";
+                            }
                         }
                     }
                 }

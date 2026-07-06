@@ -36,6 +36,7 @@ class AgentOrchestratorService:
     def execute_sequential_generation(cls, step, context_doc, system_prompt, temperature, ai_service):
         """
         Sequentially generates large documents in multiple phases to fit constraints.
+        Supports 6 large stages: PRD, User Stories, Functional, API, Database, and Architecture.
         """
         logger.info(f"Running sequential generation for large step: {step.title}")
         
@@ -46,10 +47,49 @@ class AgentOrchestratorService:
         total_retries = 0
         final_quota_status = "OK"
         
-        if step.step_type == STEP_USER_STORIES:
+        if step.step_type == STEP_PRD:
+            # Part 1: Product overview, scope, personas, and success KPIs
+            prompt1 = (
+                f"Based on the Core Requirements context, generate Part 1 of the Product Requirements Document (PRD). "
+                f"Include Document Control, Executive Summary, User Personas & Roles (with technical proficiency, objectives, frustrations), "
+                f"and Success Metrics & KPIs.\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res = ai_service.generate_text(prompt=prompt1, system_instruction=system_prompt, temperature=temperature)
+            if not res.get("success"):
+                raise Exception(res.get("error", "Failed to generate PRD Part 1."))
+            part1 = res["text"]
+            total_input_tokens += res["input_tokens"]
+            total_output_tokens += res["output_tokens"]
+            total_time_ms += res["elapsed_time_ms"]
+            total_retries += res.get("retry_count", 0)
+
+            # Part 2: Product features list, user flows, constraints, and risk analysis
+            prompt2 = (
+                f"Based on the Core Requirements context and Part 1 of the PRD, generate Part 2 of the PRD. "
+                f"Include the Detailed Product Features list (grouped by module, with priority levels, technical complexity rating, and descriptions), "
+                f"User Flow & Screen-by-Screen Outline, and Technical Assumptions, Constraints, and Risk Analysis (with mitigation plan).\n\n"
+                f"PRD Part 1:\n{part1}\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res2 = ai_service.generate_text(prompt=prompt2, system_instruction=system_prompt, temperature=temperature)
+            if not res2.get("success"):
+                raise Exception(res2.get("error", "Failed to generate PRD Part 2."))
+            part2 = res2["text"]
+            total_input_tokens += res2["input_tokens"]
+            total_output_tokens += res2["output_tokens"]
+            total_time_ms += res2["elapsed_time_ms"]
+            total_retries += res2.get("retry_count", 0)
+
+            aggregated_text = (
+                f"# Product Requirements Document (PRD) - Part 1\n\n{part1}\n\n"
+                f"# Product Requirements Document (PRD) - Part 2\n\n{part2}"
+            )
+
+        elif step.step_type == STEP_USER_STORIES:
             # 1. Generate Story Index
             index_prompt = (
-                f"Analyze the following PRD and context. Generate a logical Epic breakdown and a list of all "
+                f"Analyze the PRD and context. Generate a logical Epic breakdown and a list of all "
                 f"User Stories for this project. Specify ONLY the Epic names, User Story IDs (e.g. US-01, US-02), "
                 f"Titles, Story statements (As a... I want to... so that...), and story point estimates. "
                 f"DO NOT write the Gherkin acceptance criteria yet. Keep it structured:\n\n"
@@ -65,7 +105,7 @@ class AgentOrchestratorService:
             total_time_ms += res["elapsed_time_ms"]
             total_retries += res.get("retry_count", 0)
             
-            # 2. Generate detailed Gherkin acceptance criteria in chunks
+            # 2. Generate Gherkin details in chunks
             details_prompt = (
                 f"Based on the PRD context, write the complete, detailed User Stories (including full Given-When-Then "
                 f"acceptance criteria, Normal/Alternative flows, and validation rules) for the stories listed below. "
@@ -102,7 +142,6 @@ class AgentOrchestratorService:
             total_time_ms += res3["elapsed_time_ms"]
             total_retries += res3.get("retry_count", 0)
             
-            # Merge
             aggregated_text = (
                 f"# Epic & Story Outline\n\n{story_index}\n\n"
                 f"# User Stories Details - Part 1\n\n{details_part1}\n\n"
@@ -110,7 +149,6 @@ class AgentOrchestratorService:
             )
             
         elif step.step_type == STEP_FUNCTIONAL:
-            # 1. Generate Requirements index
             index_prompt = (
                 f"Analyze the User Stories and PRD. Generate a complete index of all Functional Requirements "
                 f"for this system (categorized into User Management/Auth, Core Data CRUD, APIs, Background Tasks, and UI). "
@@ -128,7 +166,6 @@ class AgentOrchestratorService:
             total_time_ms += res["elapsed_time_ms"]
             total_retries += res.get("retry_count", 0)
             
-            # 2. Generate details in chunks
             details_prompt = (
                 f"Based on the index and context, write the complete, detailed specification for the FIRST HALF "
                 f"of the Functional Requirements (such as FR-AUTH and FR-CORE). Specify Requirement ID, Title, Description "
@@ -170,7 +207,6 @@ class AgentOrchestratorService:
             )
             
         elif step.step_type == STEP_API:
-            # 1. Generate API Standards & Route Definitions table
             index_prompt = (
                 f"Analyze the system context and design a complete RESTful/GraphQL API. "
                 f"Generate a standards overview and a complete Route Definitions Table (Method, Path, Auth Required, Description). "
@@ -187,7 +223,6 @@ class AgentOrchestratorService:
             total_time_ms += res["elapsed_time_ms"]
             total_retries += res.get("retry_count", 0)
             
-            # 2. Generate payloads in chunks
             details_prompt = (
                 f"Based on the route table and system context, write the complete request/response JSON payloads "
                 f"and error codes for the top 3 critical API endpoints:\n\n"
@@ -225,9 +260,83 @@ class AgentOrchestratorService:
                 f"# API Endpoint Details - Part 1\n\n{payloads_part1}\n\n"
                 f"# API Endpoint Details - Part 2\n\n{payloads_part2}"
             )
-            
+
+        elif step.step_type == STEP_DATABASE:
+            # Part 1: Relational Entity-Relationship Diagram (Mermaid.js) and Indexing & Optimization Strategy
+            prompt1 = (
+                f"Design the logical database schema. For Part 1, generate a complete Relational Entity-Relationship Diagram "
+                f"in valid Mermaid.js syntax, and outline the Indexing & Performance Optimization Strategy.\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res = ai_service.generate_text(prompt=prompt1, system_instruction=system_prompt, temperature=temperature)
+            if not res.get("success"):
+                raise Exception(res.get("error", "Failed to generate Database Design Part 1."))
+            part1 = res["text"]
+            total_input_tokens += res["input_tokens"]
+            total_output_tokens += res["output_tokens"]
+            total_time_ms += res["elapsed_time_ms"]
+            total_retries += res.get("retry_count", 0)
+
+            # Part 2: Detailed Table Schemas for all tables, Data Integrity, Archival, and Migration Strategy
+            prompt2 = (
+                f"Design the logical database schema. For Part 2, write the Detailed Table Schemas for all required tables "
+                f"(defining field names, data types, keys, defaults, and constraints in markdown tables), "
+                f"and outline the Data Integrity, soft delete conventions, auditing, and Database Migration Strategy.\n\n"
+                f"Context:\n{context_doc}\n\n"
+                f"Mermaid ERD (from Part 1):\n{part1}"
+            )
+            res2 = ai_service.generate_text(prompt=prompt2, system_instruction=system_prompt, temperature=temperature)
+            if not res2.get("success"):
+                raise Exception(res2.get("error", "Failed to generate Database Design Part 2."))
+            part2 = res2["text"]
+            total_input_tokens += res2["input_tokens"]
+            total_output_tokens += res2["output_tokens"]
+            total_time_ms += res2["elapsed_time_ms"]
+            total_retries += res2.get("retry_count", 0)
+
+            aggregated_text = (
+                f"# Database Design - ERD & Strategy\n\n{part1}\n\n"
+                f"# Database Design - Table Schemas & Migrations\n\n{part2}"
+            )
+
+        elif step.step_type == STEP_ARCHITECTURE:
+            # Part 1: System architecture patterns, layered boundaries, and production tech stack
+            prompt1 = (
+                f"Design the software architecture. For Part 1, outline the System Architecture Pattern Overview "
+                f"(clean architecture, MVC, or microservices), Component Breakdown & Layered Boundaries, and production Tech Stack Recommendations.\n\n"
+                f"Context:\n{context_doc}"
+            )
+            res = ai_service.generate_text(prompt=prompt1, system_instruction=system_prompt, temperature=temperature)
+            if not res.get("success"):
+                raise Exception(res.get("error", "Failed to generate Architecture Design Part 1."))
+            part1 = res["text"]
+            total_input_tokens += res["input_tokens"]
+            total_output_tokens += res["output_tokens"]
+            total_time_ms += res["elapsed_time_ms"]
+            total_retries += res.get("retry_count", 0)
+
+            # Part 2: Design patterns, best practices, and Data Flow Diagram
+            prompt2 = (
+                f"Design the software architecture. For Part 2, compile Design Patterns & Architectural Best Practices "
+                f"(Singleton, Dependency Injection, Repository pattern, etc.) and generate a Data Flow Diagram in valid Mermaid.js syntax.\n\n"
+                f"Context:\n{context_doc}\n\n"
+                f"Tech Stack (from Part 1):\n{part1}"
+            )
+            res2 = ai_service.generate_text(prompt=prompt2, system_instruction=system_prompt, temperature=temperature)
+            if not res2.get("success"):
+                raise Exception(res2.get("error", "Failed to generate Architecture Design Part 2."))
+            part2 = res2["text"]
+            total_input_tokens += res2["input_tokens"]
+            total_output_tokens += res2["output_tokens"]
+            total_time_ms += res2["elapsed_time_ms"]
+            total_retries += res2.get("retry_count", 0)
+
+            aggregated_text = (
+                f"# System Architecture - Patterns & Tech Stack\n\n{part1}\n\n"
+                f"# System Architecture - Design Patterns & Data Flow (Mermaid)\n\n{part2}"
+            )
+
         else:
-            # Fallback
             res = ai_service.generate_text(prompt=context_doc, system_instruction=system_prompt, temperature=temperature)
             return res
 
@@ -238,12 +347,14 @@ class AgentOrchestratorService:
             "elapsed_time_ms": total_time_ms,
             "retry_count": total_retries,
             "quota_status": final_quota_status,
-            "success": True
+            "success": True,
+            "cache_hit": False,
+            "fingerprint": hashlib.md5(aggregated_text.encode('utf-8')).hexdigest()
         }
 
-    @staticmethod
+    @classmethod
     @transaction.atomic
-    def execute_pipeline(step_id, user):
+    def execute_pipeline(cls, step_id, user):
         """
         Executes the FSM pipeline for a specific lifecycle phase.
         Sets up the execution context, templates, and runs Gemini generation.
@@ -368,11 +479,15 @@ class AgentOrchestratorService:
                 model_name=ADVANCED_MODEL_NAME
             )
 
-            is_large_step = step.step_type in [STEP_USER_STORIES, STEP_FUNCTIONAL, STEP_API]
+            # budget checklist phases
+            is_large_phase = step.step_type in [
+                STEP_PRD, STEP_USER_STORIES, STEP_FUNCTIONAL, 
+                STEP_API, STEP_DATABASE, STEP_ARCHITECTURE
+            ]
             is_mock_mode = not api_key or api_key == "dummy-api-key-for-now"
 
-            if is_large_step and not is_mock_mode:
-                response = AgentOrchestratorService.execute_sequential_generation(
+            if is_large_phase and not is_mock_mode:
+                response = cls.execute_sequential_generation(
                     step=step,
                     context_doc=memory_context,
                     system_prompt=system_prompt,
@@ -407,6 +522,9 @@ class AgentOrchestratorService:
                 is_approved=False
             )
 
+            # Immediately index generated artifact section categories
+            MemoryService.index_document_sections(step, generated_text)
+
             # Save output back into Short-Term memory logs
             MemoryService.save_memory(
                 project=project,
@@ -418,6 +536,22 @@ class AgentOrchestratorService:
             # Perform quality check audits
             EvaluationService.evaluate_artifact(execution, generated_text, step.title)
 
+            # Fetch Prompt Analysis Report and save in step metadata
+            report = PromptBuilder.get_last_report()
+            if not isinstance(step.metadata, dict):
+                step.metadata = {}
+            step.metadata['diagnostics'] = {
+                "report": report,
+                "fingerprint": response.get("fingerprint"),
+                "cache_hit": response.get("cache_hit", False),
+                "execution_time_ms": elapsed_time_ms,
+                "retry_count": response.get("retry_count", 0),
+                "quota_status": response.get("quota_status", "OK"),
+                "input_tokens": response.get("input_tokens", 0),
+                "output_tokens": response.get("output_tokens", 0)
+            }
+            step.save()
+
             # Conclude execution metrics
             execution.input_tokens = response.get("input_tokens", len(prompt) // 4)
             execution.output_tokens = response.get("output_tokens", len(generated_text) // 4)
@@ -427,9 +561,7 @@ class AgentOrchestratorService:
             execution.status = 'SUCCEEDED'
             execution.save()
 
-            # Note: We do NOT set the step as COMPLETED yet. It remains in RUNNING status 
-            # until approved by the user, locking the FSM sequence as desired.
-            step.notes = f"Generation completed. Pending architect approval (v{next_ver})."
+            step.notes = f"Generation completed. Pending approval (v{next_ver})."
             step.save()
 
             return {
@@ -450,6 +582,16 @@ class AgentOrchestratorService:
             execution.retry_count = response.get("retry_count", 0) if (locals().get("response") and isinstance(response, dict)) else 0
             execution.quota_status = response.get("quota_status", "ERROR") if (locals().get("response") and isinstance(response, dict)) else "ERROR"
             execution.save()
+
+            # Save diagnostic errors
+            if not isinstance(step.metadata, dict):
+                step.metadata = {}
+            step.metadata['diagnostics'] = {
+                "error": str(e),
+                "execution_time_ms": elapsed_time_ms,
+                "quota_status": execution.quota_status
+            }
+            step.save()
 
             PlannerService.fail_step(step, error_message=str(e))
             raise e
