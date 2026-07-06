@@ -398,11 +398,14 @@ details[open] .summary-arrow { transform: rotate(180deg); }
   margin-left: var(--sidebar-width);
   padding: 32px;
   min-height: calc(100vh - 66px);
-  animation: sp-fade-up 0.5s cubic-bezier(0.16,1,0.3,1);
+  animation: sp-fade-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.public-main-content {
+  animation: sp-fade-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes sp-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -424,11 +427,13 @@ details[open] .summary-arrow { transform: rotate(180deg); }
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow: var(--card-shadow);
-  transition: border-color var(--transition-smooth), transform var(--transition-smooth), box-shadow var(--transition-smooth);
+  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 a.glass-card:hover, .glass-card.hoverable:hover {
   border-color: var(--card-border-hover);
-  transform: translateY(-3px);
+  transform: translateY(-2px);
+  background-color: var(--card-bg-strong);
+  box-shadow: var(--card-shadow), 0 8px 24px -10px rgba(0, 0, 0, 0.5);
 }
 
 .glass-panel {
@@ -440,6 +445,12 @@ a.glass-card:hover, .glass-card.hoverable:hover {
   box-shadow: var(--card-shadow);
   position: relative;
   overflow: hidden;
+  transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel.hoverable:hover {
+  border-color: var(--card-border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow), 0 8px 28px -10px rgba(0, 0, 0, 0.6);
 }
 .glass-panel::before {
   content: '';
@@ -452,8 +463,8 @@ a.glass-card:hover, .glass-card.hoverable:hover {
 }
 
 /* row/col cards used across dashboards inherit .glass-card hover lift */
-.row .glass-card { transition: border-color var(--transition-smooth), transform var(--transition-smooth); }
-.row .glass-card:hover { border-color: var(--card-border-hover); transform: translateY(-4px); }
+.row .glass-card { transition: border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+.row .glass-card:hover { border-color: var(--card-border-hover); transform: translateY(-2px); }
 
 /* ---------------------------------------------------------------------- *
  * 7. BUTTONS
@@ -745,13 +756,44 @@ textarea.form-control-custom { resize: vertical; }
 /* ---------------------------------------------------------------------- *
  * 11. TABLES
  * ---------------------------------------------------------------------- */
-.table-custom { color: var(--text-secondary); border-collapse: separate; border-spacing: 0 8px; }
-.table-custom thead th { border: none; padding-bottom: 10px; font-size: 0.68rem; letter-spacing: 0.06em; }
-.table-custom tbody tr { background: var(--card-bg); transition: background var(--transition-fast); }
-.table-custom tbody tr:hover { background: var(--card-bg-strong); }
-.table-custom tbody td { border: none; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); padding: 14px 16px; }
-.table-custom tbody td:first-child { border-left: 1px solid var(--card-border); border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm); }
-.table-custom tbody td:last-child { border-right: 1px solid var(--card-border); border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0; }
+.table-custom {
+  color: var(--text-secondary);
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  background: transparent !important;
+}
+.table-custom thead th {
+  border: none;
+  padding-bottom: 10px;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+}
+.table-custom tbody tr {
+  background: transparent !important;
+}
+.table-custom tbody td {
+  background-color: var(--card-bg) !important;
+  color: var(--text-secondary) !important;
+  border: none;
+  border-top: 1px solid var(--card-border) !important;
+  border-bottom: 1px solid var(--card-border) !important;
+  padding: 14px 16px;
+  transition: background-color var(--transition-fast);
+}
+.table-custom tbody tr:hover td {
+  background-color: var(--card-bg-strong) !important;
+  color: var(--text-primary) !important;
+}
+.table-custom tbody td:first-child {
+  border-left: 1px solid var(--card-border) !important;
+  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+}
+.table-custom tbody td:last-child {
+  border-right: 1px solid var(--card-border) !important;
+  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+}
 
 /* ---------------------------------------------------------------------- *
  * 12. TABS
@@ -934,16 +976,7 @@ textarea.form-control-custom { resize: vertical; }
   overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important;
 }
 
-/* ---------------------------------------------------------------------- *
- * 23. 3D TILT INTERACTION (JS toggles transform on pointer move)
- * ---------------------------------------------------------------------- */
-.tilt-3d {
-  transform-style: preserve-3d;
-  perspective: 1000px;
-  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), border-color var(--transition-smooth);
-  will-change: transform;
-}
-.tilt-3d-inner { transform: translateZ(24px); transform-style: preserve-3d; }
+
 
 /* ---------------------------------------------------------------------- *
  * 24. AMBIENT FLOATING ORBS (decorative depth layer)

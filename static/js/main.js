@@ -15,11 +15,16 @@
     var splash = document.getElementById('sp-splash');
     if (!splash) return;
 
+    if (seen) {
+      splash.remove();
+      return;
+    }
+
     var statusEl = splash.querySelector('.sp-splash-status');
     var percentEl = splash.querySelector('.sp-splash-percent');
     var progressEl = splash.querySelector('.sp-splash-progress');
 
-    var duration = seen ? 400 : 2200; // fast reload if already seen in session
+    var duration = 2200;
     var startTime = null;
 
     var phases = [
@@ -270,27 +275,7 @@
     });
   }
 
-  /* ---------------------------------------------------------------- *
-   * 11. 3D TILT ON CARDS (desktop pointer only)
-   * ---------------------------------------------------------------- */
-  function init3DTilt() {
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-    var cards = document.querySelectorAll('.glass-card, .glass-panel');
-    cards.forEach(function (card) {
-      card.classList.add('tilt-3d');
-      card.addEventListener('mousemove', function (e) {
-        var rect = card.getBoundingClientRect();
-        var px = (e.clientX - rect.left) / rect.width;
-        var py = (e.clientY - rect.top) / rect.height;
-        var rotateY = (px - 0.5) * 6;
-        var rotateX = (0.5 - py) * 6;
-        card.style.transform = 'perspective(1000px) rotateX(' + rotateX.toFixed(2) + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg) translateZ(0)';
-      });
-      card.addEventListener('mouseleave', function () {
-        card.style.transform = '';
-      });
-    });
-  }
+
 
   /* ---------------------------------------------------------------- *
    * 12. AMBIENT ORB FIELD (inserted once per page for background depth)
@@ -447,7 +432,6 @@
     initRipple();
     initCounters();
     initMarquee();
-    init3DTilt();
     initOrbField();
     initHeroPipeline();
     initPasswordReveal();

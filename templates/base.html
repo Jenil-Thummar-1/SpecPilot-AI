@@ -24,6 +24,11 @@
     <!-- SpecPilot AI Design System -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
 
+    <script>
+        if (sessionStorage.getItem('specpilot-splash-seen')) {
+            document.write('<style>#sp-splash { display: none !important; }</style>');
+        }
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
