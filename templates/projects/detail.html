@@ -502,6 +502,7 @@
                          data-step-order="{{ step.order }}"
                          data-step-status="{{ step.status }}"
                          data-step-type="{{ step.step_type }}"
+                         data-step-dependencies="{{ step.dependencies_str|default:'' }}"
                          style="width: 260px; background: rgba(255,255,255,0.012); border: 1px solid var(--card-border); scroll-snap-align: start; transition: var(--transition-smooth);">
                         
                         <!-- Phase Header -->
@@ -769,6 +770,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const order = parseInt(card.dataset.stepOrder);
         const status = card.dataset.stepStatus;
         const type = card.dataset.stepType;
+        const dependencies_str = card.dataset.stepDependencies || "";
         const titleEl = document.getElementById(`step-title-${stepId}`);
         const title = titleEl ? titleEl.textContent.trim() : "";
         const runUrl = `/projects/${projectId}/step/${stepId}/auto-run/`;
@@ -779,6 +781,7 @@ document.addEventListener("DOMContentLoaded", function() {
             title: title,
             status: status,
             type: type,
+            dependencies_str: dependencies_str,
             runUrl: runUrl
         };
     });
@@ -893,7 +896,36 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const logLine = `<div class="mb-1" style="color: ${color};"><span style="opacity:0.5; margin-right:4px;">[${timeStr}]</span> <strong>${prefix}</strong> ${msg}</div>`;
         orcConsole.insertAdjacentHTML('beforeend', logLine);
-        orcConsole.scrol    // Dynamic timer
+        orcConsole.scrollTop = orcConsole.scrollHeight;
+    }
+
+    function setDeveloperError(message, detail = "") {
+        const devProfiler = document.getElementById("devProfiler");
+        const devFingerprint = document.getElementById("devFingerprint");
+        if (devFingerprint) devFingerprint.textContent = "frontend-error";
+        if (devProfiler) {
+            const safeMessage = String(message || "Unknown error").replace(/[<>&]/g, ch => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[ch]));
+            const safeDetail = String(detail || "").replace(/[<>&]/g, ch => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[ch]));
+            devProfiler.innerHTML = `<strong>Execution Error:</strong><br>${safeMessage}${safeDetail ? `<br><br><strong>Details:</strong><br>${safeDetail}` : ""}`;
+        }
+    }
+
+    function tracePlanner(message, payload = null) {
+        const suffix = payload ? ` ${JSON.stringify(payload)}` : "";
+        console.info(`[SpecPilot Planner] ${message}`, payload || "");
+        logConsole(`${message}${suffix}`, "info");
+    }
+
+    window.addEventListener("error", function(event) {
+        setDeveloperError(event.message, `${event.filename}:${event.lineno}:${event.colno}`);
+    });
+
+    window.addEventListener("unhandledrejection", function(event) {
+        const reason = event.reason && event.reason.message ? event.reason.message : String(event.reason || "Unhandled promise rejection");
+        setDeveloperError(reason);
+    });
+
+    // Dynamic timer
     function startElapsedTimer() {
         swarmState.startTime = Date.now();
         swarmState.elapsedInterval = setInterval(() => {
@@ -936,11 +968,12 @@ document.addEventListener("DOMContentLoaded", function() {
     // Main execution launcher
     function launchAutonomousSwarm(regenerateAll = false) {
         if (swarmState.isRunning) return;
+        tracePlanner("Launch requested", { regenerateAll, projectId, steps: stepsData.length });
         swarmState.isRunning = true;
         swarmState.forceRegen = regenerateAll;
         swarmState.currentIndex = 0;
         swarmState.activeWorkersCount = 0;
-        swarmState.completedCount = 0;
+        swarmState.completedCount = regenerateAll ? stepsData.filter(s => s.type === 'IDEA').length : stepsData.filter(s => s.status === 'COMPLETED').length;
         swarmState.qaScoresList = [];
         swarmState.speedHistory = [];
 
@@ -993,6 +1026,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // Parallel schedule logic
     function scheduleNextSteps() {
         if (!swarmState.isRunning) return;
+        tracePlanner("Scheduler tick", {
+            activeWorkers: swarmState.activeWorkersCount,
+            completed: stepsData.filter(s => s.status === 'COMPLETED').length,
+            pending: stepsData.filter(s => s.status !== 'COMPLETED' && s.status !== 'RUNNING').map(s => `${s.order}:${s.status}`)
+        });
 
         // Check if all steps are completed
         const allCompleted = stepsData.every(s => s.status === 'COMPLETED');
@@ -1005,12 +1043,20 @@ document.addEventListener("DOMContentLoaded", function() {
         const eligibleSteps = stepsData.filter(step => {
             return step.status !== 'COMPLETED' && step.status !== 'RUNNING' && areDependenciesMet(step);
         });
+        tracePlanner("Eligible phases", eligibleSteps.map(s => ({ order: s.order, id: s.id, title: s.title })));
 
-        // Launch eligible steps within the worker pool capacity (max 4 concurrent workers)
+        if (eligibleSteps.length === 0 && swarmState.activeWorkersCount === 0) {
+            const blocked = stepsData.filter(step => step.status !== 'COMPLETED');
+            handleStepFailure(blocked[0] || stepsData[0], "No eligible planning phases found. Check dependency state and completed phase statuses.");
+            return;
+        }
+
+        // Launch one phase at a time to preserve the planner FSM and avoid SQLite write locks.
         eligibleSteps.forEach(step => {
-            if (swarmState.activeWorkersCount >= 4) {
+            if (swarmState.activeWorkersCount >= 1) {
                 return;
             }
+            tracePlanner("Starting next sequential phase", { order: step.order, id: step.id });
             step.status = 'RUNNING';
             swarmState.activeWorkersCount++;
             executeStep(step);
@@ -1020,9 +1066,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // Execute single step
     function executeStep(step) {
         if (!step) return;
+        swarmState.currentIndex = stepsData.findIndex(s => s.id === step.id);
         const agent = agentNames[step.type] || 'Alpha Planner';
         if (orcActiveAgent) orcActiveAgent.textContent = agent;
         logConsole(`Spawning ${agent} to process Phase ${step.order}: ${step.title}...`, "running");
+        tracePlanner("Phase execution starting", { stepId: step.id, order: step.order, runUrl: step.runUrl, dependencies: step.dependencies_str });
 
         // Update card styles dynamically in horizontal track
         const card = document.getElementById(`step-card-${step.id}`);
@@ -1060,6 +1108,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // POST to execute AJAX endpoint
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : "";
+        if (!csrfToken) {
+            const csrfError = "Missing CSRF token. Cannot dispatch autonomous planner request.";
+            setDeveloperError(csrfError);
+            handleStepFailure(step, csrfError);
+            return;
+        }
+        tracePlanner("Dispatching planner request", { url: step.runUrl, method: "POST", force_regen: swarmState.forceRegen });
         
         fetch(step.runUrl, {
             method: 'POST',
@@ -1070,14 +1125,17 @@ document.addEventListener("DOMContentLoaded", function() {
             body: JSON.stringify({ force_regen: swarmState.forceRegen })
         })
         .then(response => {
+            tracePlanner("Planner response received", { status: response.status, ok: response.ok, url: response.url });
             if (!response.ok) {
-                return response.json().then(errData => {
+                return response.json().catch(() => ({})).then(errData => {
+                    setDeveloperError(errData.error || `HTTP ${response.status}`, errData.traceback || errData.detail || "");
                     throw new Error(errData.error || `HTTP ${response.status}`);
                 });
             }
             return response.json();
         })
         .then(data => {
+            tracePlanner("Planner JSON parsed", { success: data.success, step_id: data.step_id, skipped: data.skipped, title: data.title });
             if (data.success) {
                 const latency = Date.now() - (step.stepStartTime || Date.now());
                 swarmState.speedHistory.push(latency);
@@ -1287,7 +1345,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         })
         .catch(err => {
-            swarmState.activeWorkersCount--;
+            swarmState.activeWorkersCount = Math.max(0, swarmState.activeWorkersCount - 1);
+            setDeveloperError(err.message, `Phase ${step.order}: ${step.title}`);
             logConsole(`Execution failed for Phase ${step.order}: ${err.message}`, "error");
             handleStepFailure(step, err.message);
         });
@@ -1360,6 +1419,9 @@ document.addEventListener("DOMContentLoaded", function() {
         // Show error actions
         if (orcErrorMsg) orcErrorMsg.textContent = `${step.title}: ${errorMsg}`;
         if (orcErrorActions) orcErrorActions.classList.remove("d-none");
+        if (btnLaunchSwarm) btnLaunchSwarm.removeAttribute("disabled");
+        if (launchPulse) launchPulse.classList.add("d-none");
+        if (launchIcon) launchIcon.classList.remove("d-none");
     }
 
     // Success finalizer
@@ -1389,6 +1451,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (orcTerminal) orcTerminal.classList.add("d-none");
         if (orcSuccessBlock) orcSuccessBlock.classList.remove("d-none");
         if (orcExportActions) orcExportActions.classList.remove("d-none");
+        if (btnLaunchSwarm) btnLaunchSwarm.removeAttribute("disabled");
+        if (launchPulse) launchPulse.classList.add("d-none");
+        if (launchIcon) launchIcon.classList.remove("d-none");
     }
 
     // Retry and skip button events
@@ -1416,7 +1481,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Launch Button events
     if (btnLaunchSwarm) {
+        console.info("[SpecPilot Planner] Launch button listener attached", { projectId, steps: stepsData.length });
         btnLaunchSwarm.addEventListener("click", function() {
+            tracePlanner("Launch button clicked", { isRunning: swarmState.isRunning });
             if (swarmState.isRunning) return;
             if (launchPulse) launchPulse.classList.remove("d-none");
             if (launchIcon) launchIcon.classList.add("d-none");
