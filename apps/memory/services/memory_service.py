@@ -125,7 +125,7 @@ class MemoryService:
     def extract_and_update_knowledge_store(project, step, artifact_content):
         """
         Extracts structured facts/decisions from the approved artifact and merges them into the project knowledge store.
-        Uses gemini-2.5-flash for lightweight extraction.
+        Uses the centralized AI provider router for lightweight extraction.
         """
         if not artifact_content:
             return
@@ -142,20 +142,9 @@ class MemoryService:
 
         existing_store = project.metadata['knowledge_store']
 
-        # If dummy key, simulate basic extraction
         api_key = None
         if project.user and hasattr(project.user, 'profile') and project.user.profile.api_key_override:
             api_key = project.user.profile.api_key_override
-            
-        if not api_key or api_key == "dummy-api-key-for-now":
-            # Seed basic mock facts
-            existing_store["facts"].append(f"Completed Phase {step.order}: {step.title}")
-            project.metadata['knowledge_store'] = existing_store
-            project.save()
-            
-            # Invalidate in-memory cache
-            MemoryService.clear_project_cache(project.id)
-            return
 
         from apps.core.services.gemini_service import GeminiService
         from config.ai import DEFAULT_MODEL_NAME
@@ -204,12 +193,16 @@ class MemoryService:
             # Invalidate in-memory cache
             MemoryService.clear_project_cache(project.id)
         except Exception as e:
-            logger.error(f"Failed to extract knowledge store update: {e}")
+            logger.info(f"Knowledge extraction used fallback facts for step '{step.title}': {e}")
+            existing_store["facts"].append(f"Completed Phase {step.order}: {step.title}")
+            project.metadata['knowledge_store'] = existing_store
+            project.save()
+            MemoryService.clear_project_cache(project.id)
 
     @staticmethod
     def generate_artifact_summary(step, artifact_content):
         """
-        Uses standard/low-cost model (gemini-2.5-flash) to generate a concise summary
+        Uses the centralized AI provider router to generate a concise summary
         of the artifact content and stores it in the step's metadata['summary'].
         """
         if not artifact_content:

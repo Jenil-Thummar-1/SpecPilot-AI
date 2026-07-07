@@ -1,5 +1,6 @@
 import logging
 import time
+import hashlib
 from django.utils import timezone
 from django.db import transaction
 
@@ -472,7 +473,7 @@ class AgentOrchestratorService:
                 "config_settings": agent.config_settings
             }
 
-            # 9. Instantiate Gemini Client
+            # 9. Instantiate centralized AI client facade
             api_key = None
             if hasattr(user, 'profile') and user.profile.api_key_override:
                 api_key = user.profile.api_key_override
@@ -488,9 +489,8 @@ class AgentOrchestratorService:
                 STEP_PRD, STEP_USER_STORIES, STEP_FUNCTIONAL, 
                 STEP_API, STEP_DATABASE, STEP_ARCHITECTURE
             ]
-            is_mock_mode = not api_key or api_key == "dummy-api-key-for-now"
 
-            if is_large_phase and not is_mock_mode:
+            if is_large_phase:
                 response = cls.execute_sequential_generation(
                     step=step,
                     context_doc=memory_context,

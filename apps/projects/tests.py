@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from apps.projects.models import Project
 from apps.planner.models import PlanStep
 from apps.generator.models import GeneratedArtifact
+from apps.exports.models import ExportJob
 from apps.planner.services.planner_service import PlannerService
 from apps.projects.services import ProjectService
 
@@ -93,3 +94,15 @@ class AutonomousPlannerE2ETest(TestCase):
         export_artifact = GeneratedArtifact.objects.filter(project=self.project, step=export_prep_step).first()
         self.assertIsNotNone(export_artifact)
         self.assertTrue(export_artifact.is_approved)
+
+        # 5. Verify all supported export formats compile successfully
+        for export_format in ["MARKDOWN", "PDF", "JSON", "ZIP"]:
+            response = self.client.post(
+                f"/projects/{self.project.id}/export/",
+                data={"format": export_format}
+            )
+            self.assertEqual(response.status_code, 302)
+            job = ExportJob.objects.filter(project=self.project, export_format=export_format).order_by("-created_at").first()
+            self.assertIsNotNone(job)
+            self.assertEqual(job.status, "SUCCEEDED")
+            self.assertTrue(job.download_file)

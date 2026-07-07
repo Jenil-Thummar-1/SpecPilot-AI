@@ -132,8 +132,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Google Gemini API Configurations
+# AI Provider Configurations
+AI_PROVIDER = env('AI_PROVIDER', default='auto')
+OLLAMA_BASE_URL = env('OLLAMA_BASE_URL', default='http://localhost:11434')
+OLLAMA_MODEL = env('OLLAMA_MODEL', default='llama3')
 GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
+GEMINI_MODEL = env('GEMINI_MODEL', default='gemini-2.5-flash')
+GEMINI_MAX_RETRIES = env.int('GEMINI_MAX_RETRIES', default=2)
+GEMINI_MAX_REQUEST_TOKENS = env.int('GEMINI_MAX_REQUEST_TOKENS', default=30000)
 
 # Security & Safety Layers
 AI_SAFETY_BLOCKING = True

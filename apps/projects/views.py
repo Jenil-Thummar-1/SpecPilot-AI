@@ -19,7 +19,6 @@ from apps.exports.models import ExportJob
 from apps.projects.services import ProjectService
 from apps.planner.services.planner_service import PlannerService
 from apps.memory.services.memory_service import MemoryService
-from apps.core.services.gemini_service import GeminiService
 from apps.core.services.prompt_builder import PromptBuilder
 from apps.evaluation.services.evaluation_service import EvaluationService
 from apps.exports.services.export_service import ExportService
@@ -259,6 +258,8 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         context['project_total_time'] = f"{total_time_ms / 1000:.1f}s"
         context['project_retries'] = total_retries
         context['project_quota_status'] = quota_status
+        from apps.core.services.router import AIProviderRouter
+        context['provider_status'] = AIProviderRouter.get_status()
 
         return context
 
@@ -546,7 +547,7 @@ def export_project_view(request, project_id):
     if request.method == 'POST':
         export_format = request.POST.get('format', 'MARKDOWN')
         
-        if export_format not in ['MARKDOWN', 'PDF', 'JSON']:
+        if export_format not in ['MARKDOWN', 'PDF', 'JSON', 'ZIP']:
             messages.error(request, "Unsupported export format.")
             return redirect('project_detail', project_id=project.id)
             
@@ -601,5 +602,3 @@ class SeedDemoProjectsView(LoginRequiredMixin, View):
         ProjectService.seed_demo_projects(request.user)
         messages.success(request, "Demo workspaces initialized! Explore HMS, AI HRMS, and E-Commerce platforms immediately.")
         return redirect('dashboard')
-
-

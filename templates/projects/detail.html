@@ -173,7 +173,7 @@
                 <div id="orcHeader">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <h5 class="text-white fw-bold m-0" style="font-size: 0.95rem; letter-spacing: -0.010em;">Autonomous Swarm Planner</h5>
-                        <span class="badge bg-secondary-glow text-secondary" id="orcHeaderBadge" style="font-size: 0.65rem;">Gemini 2.5 Pro</span>
+                        <span class="badge bg-secondary-glow text-secondary" id="orcHeaderBadge" style="font-size: 0.65rem;">{{ provider_status.active_provider|default:"AI Router" }}</span>
                     </div>
                     <p class="text-secondary small mb-3" id="orcDescription">Auto-compiles the entire specification blueprint using collaborative AI agents.</p>
                 </div>
@@ -263,11 +263,19 @@
                         <div class="row g-2 mt-2 text-start" style="font-size: 0.7rem; color: rgba(255,255,255,0.75);">
                             <div class="col-6">
                                 <span class="text-muted d-block" style="font-size: 0.62rem;">Active Provider</span>
-                                <span class="fw-bold text-accent" id="providerActiveName">Gemini</span>
+                                <span class="fw-bold text-accent" id="providerActiveName">{{ provider_status.active_provider|default:"Pending" }}</span>
                             </div>
                             <div class="col-6">
                                 <span class="text-muted d-block" style="font-size: 0.62rem;">Active Model</span>
-                                <span class="fw-bold text-white font-monospace" style="font-size: 0.65rem;" id="providerActiveModel">gemini-2.5-pro</span>
+                                <span class="fw-bold text-white font-monospace" style="font-size: 0.65rem;" id="providerActiveModel">{{ provider_status.active_model|default:"auto" }}</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Last Latency</span>
+                                <span class="fw-bold text-white" id="providerLatency">{{ provider_status.last_latency_ms|default:0 }}ms</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted d-block" style="font-size: 0.62rem;">Router Cache</span>
+                                <span class="fw-bold text-white" id="providerCacheStats">{{ provider_status.cache.hits|default:0 }} hit / {{ provider_status.cache.misses|default:0 }} miss</span>
                             </div>
                             <div class="col-12">
                                 <span class="text-muted d-block" style="font-size: 0.62rem;">Failover / Rotation Log</span>
@@ -331,7 +339,6 @@
                             </div>
                         </div>
                     </details>
-                    {% endif %}
                 </div>
 
                 <!-- Terminal Logger Console (Shown when running/completed) -->
@@ -353,7 +360,7 @@
                     <div class="d-flex flex-column gap-1.5 text-start border-top pt-2 mt-2" style="border-color: rgba(255,255,255,0.05) !important; font-size: 0.7rem;">
                         <div class="d-flex justify-content-between"><span class="text-muted">Total Duration:</span><span class="text-white fw-bold" id="orcTotalTime">-</span></div>
                         <div class="d-flex justify-content-between"><span class="text-muted">Avg QA Score:</span><span class="text-info fw-bold" id="orcSuccessQA">-</span></div>
-                        <div class="d-flex justify-content-between"><span class="text-muted">AI Model:</span><span class="text-muted fw-bold">Gemini 2.5 Pro</span></div>
+                        <div class="d-flex justify-content-between"><span class="text-muted">AI Model:</span><span class="text-muted fw-bold" id="orcSuccessModel">{{ provider_status.active_model|default:"auto" }}</span></div>
                     </div>
                 </div>
 
@@ -962,7 +969,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // Reset console log
         if (orcConsole) orcConsole.innerHTML = "";
         logConsole("⚡ Initiating autonomous agent swarm workspace compiler...", "info");
-        logConsole("🔗 Connected to Gemini 2.5 Pro reasoning engine.", "info");
+        logConsole("Connected to the configured AI provider router.", "info");
         logConsole("🔄 Scanning planning dependencies...", "info");
 
         startElapsedTimer();
@@ -1128,9 +1135,17 @@ document.addEventListener("DOMContentLoaded", function() {
                     const provActiveName = document.getElementById("providerActiveName");
                     const provActiveModel = document.getElementById("providerActiveModel");
                     const provFailoverLog = document.getElementById("providerFailoverLog");
+                    const providerLatency = document.getElementById("providerLatency");
+                    const providerCacheStats = document.getElementById("providerCacheStats");
+                    const successModel = document.getElementById("orcSuccessModel");
                     
-                    if (provActiveName) provActiveName.textContent = data.provider_status.active_provider || "Gemini";
-                    if (provActiveModel) provActiveModel.textContent = data.provider_status.active_model || "gemini-2.5-pro";
+                    if (provActiveName) provActiveName.textContent = data.provider_status.active_provider || "AI Router";
+                    if (provActiveModel) provActiveModel.textContent = data.provider_status.active_model || "auto";
+                    if (providerLatency) providerLatency.textContent = `${data.provider_status.last_latency_ms || 0}ms`;
+                    if (providerCacheStats && data.provider_status.cache) {
+                        providerCacheStats.textContent = `${data.provider_status.cache.hits || 0} hit / ${data.provider_status.cache.misses || 0} miss`;
+                    }
+                    if (successModel) successModel.textContent = data.provider_status.active_model || "auto";
                     
                     if (provFailoverLog && data.provider_status.failover_events) {
                         let logHtml = "";
@@ -1395,7 +1410,7 @@ document.addEventListener("DOMContentLoaded", function() {
             logConsole(`Skipping Phase ${stepsData[swarmState.currentIndex].order}: ${stepsData[swarmState.currentIndex].title}.`, "warning");
             startElapsedTimer();
             swarmState.currentIndex++;
-            processNextStep();
+            scheduleNextSteps();
         });
     }
 

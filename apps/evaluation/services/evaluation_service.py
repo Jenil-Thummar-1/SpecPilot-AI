@@ -51,8 +51,8 @@ class EvaluationService:
 
         eval_data = None
         
-        # Call Gemini only if mode is not ULTRA_FAST and api_key is present
-        if quality_mode != 'ULTRA_FAST' and api_key and api_key != "dummy-api-key-for-now":
+        # Call centralized AI router only when the project requests model-based validation.
+        if quality_mode != 'ULTRA_FAST':
             ai_service = GeminiService(
                 api_key=api_key,
                 model_name=ADVANCED_MODEL_NAME
@@ -105,7 +105,7 @@ You MUST respond ONLY with a valid JSON object in the following format:
 """
 
             try:
-                with PerformanceProfiler(agent_execution.id, "Gemini Quality Evaluation"):
+                with PerformanceProfiler(agent_execution.id, "AI Quality Evaluation"):
                     res = ai_service.generate_text(
                         prompt=prompt,
                         system_instruction="You are the Principal QA Lead and AI Compliance Guard for SpecPilot AI."

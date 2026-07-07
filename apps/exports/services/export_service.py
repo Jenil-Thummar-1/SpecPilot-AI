@@ -279,7 +279,7 @@ class ExportService:
                     canvas.drawRightString(letter[0] - 54, 36, f"Page {doc_template.page}")
                     canvas.restoreState()
                     
-                doc.build(story, onFirstPage=None, onLaterPages=draw_page_decorations)
+                doc.build(story, onFirstPage=draw_page_decorations, onLaterPages=draw_page_decorations)
                 
                 # Link the written file to the Django field
                 with open(file_path, 'rb') as f:

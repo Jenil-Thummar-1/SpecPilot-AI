@@ -3,12 +3,15 @@ Gemini AI Engine settings & safety parameters configuration.
 Provides safety filter settings, API model selections, and initialization parameters.
 """
 import os
-from google import generativeai as genai
+try:
+    from google import generativeai as genai
+except Exception:
+    genai = None
 
 # Read settings from environment variables, fallback to defaults
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-DEFAULT_MODEL_NAME = "gemini-2.5-flash"  # Standard high-speed planning model
-ADVANCED_MODEL_NAME = "gemini-2.5-pro"   # Standard high-reasoning architect model
+DEFAULT_MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+ADVANCED_MODEL_NAME = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 # Default safety settings for generation
 SAFETY_SETTINGS = [
@@ -42,7 +45,7 @@ def initialize_gemini():
     """
     Initializes the Google Generative AI API client with the loaded key.
     """
-    if GEMINI_API_KEY:
+    if GEMINI_API_KEY and genai:
         genai.configure(api_key=GEMINI_API_KEY)
     else:
         # Client initialization fails gracefully if key is missing during project setup.
